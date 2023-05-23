@@ -1,3 +1,6 @@
+c2sp.org/CCTV/age v0.0.0-20221230231406-5ea85644bd03 h1:0e2QjhWG02SgzlUOvNYaFraf04OBsUPOLxf+K+Ae/yM=
+filippo.io/age v1.1.2-0.20230523153632-8a01d201c863 h1:YZDCIqhQqMc8D1F98smj+Enm3OPioJYNDKZh/CP+zbw=
+filippo.io/age v1.1.2-0.20230523153632-8a01d201c863/go.mod h1:cCeOs0AIM8hGrRaeciwWUC9lcXM9Ca4k2Xk8GHG3VVk=
 github.com/creack/goselect v0.1.2 h1:2DNy14+JPjRBgPzAd1thbQp4BSIihxcBf0IXhQXDRa0=
 github.com/creack/goselect v0.1.2/go.mod h1:a/NhLweNvqIYMuxcMOuWY516Cimucms3DglDzQP3hKY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

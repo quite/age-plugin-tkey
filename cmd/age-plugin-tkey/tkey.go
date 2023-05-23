@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
 
 	"github.com/quite/age-plugin-tkey/internal/util"
 	"github.com/quite/tkeyx25519"
@@ -24,15 +22,14 @@ const (
 )
 
 func (t *tkey) connect() error {
-	// TODO
-	verbose := true
+	verbose := true // TODO
 
 	tkeyclient.SilenceLogging()
 
 	// TODO not allowing for any custom devpath (or speed)
 	devPath, err := util.DetectSerialPort(true)
 	if err != nil {
-		return err
+		return fmt.Errorf("DetectSerialPort failed: %w", err)
 	}
 
 	tk := tkeyclient.New()
@@ -75,16 +72,16 @@ func (t *tkey) disconnect() {
 	}
 }
 
-func handleSignals(action func(), sig ...os.Signal) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, sig...)
-	go func() {
-		for {
-			<-ch
-			action()
-		}
-	}()
-}
+// func handleSignals(action func(), sig ...os.Signal) {
+// 	ch := make(chan os.Signal, 1)
+// 	signal.Notify(ch, sig...)
+// 	go func() {
+// 		for {
+// 			<-ch
+// 			action()
+// 		}
+// 	}()
+// }
 
 func isFirmwareMode(tk *tkeyclient.TillitisKey) bool {
 	nameVer, err := tk.GetNameVersion()
