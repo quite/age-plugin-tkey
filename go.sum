@@ -1,0 +1,16 @@
+github.com/creack/goselect v0.1.2 h1:2DNy14+JPjRBgPzAd1thbQp4BSIihxcBf0IXhQXDRa0=
+github.com/creack/goselect v0.1.2/go.mod h1:a/NhLweNvqIYMuxcMOuWY516Cimucms3DglDzQP3hKY=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/quite/tkeyx25519 v0.0.0-20230523090805-d47313deea03 h1:5u3GRTjZwmt7CjsKeTSKytZfZj7XUM+Lc8ze4crxSII=
+github.com/quite/tkeyx25519 v0.0.0-20230523090805-d47313deea03/go.mod h1:szLgHBZogFOjArYXeMJuSD44rI5zbZBCj7tH6JlZY4A=
+github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
+github.com/tillitis/tkeyclient v0.0.0-20230515175551-f6bb10fe1c9d h1:UZsBHWtnqtT+IkTS6WLnj2XaTThMjiOZDR7IzmuojRY=
+github.com/tillitis/tkeyclient v0.0.0-20230515175551-f6bb10fe1c9d/go.mod h1:B/O+T4WWEXDbJ/w7ktWxoZ7GE8+WZDWrw7RJS1xAAYQ=
+go.bug.st/serial v1.5.0 h1:ThuUkHpOEmCVXxGEfpoExjQCS2WBVV4ZcUKVYInM9T4=
+go.bug.st/serial v1.5.0/go.mod h1:UABfsluHAiaNI+La2iESysd9Vetq7VRdpxvjx7CmmOE=
+golang.org/x/crypto v0.7.0 h1:AvwMYaRytfdeVt3u6mLaxYtErKYjxA2OXjJ1HHq6t3A=
+golang.org/x/crypto v0.7.0/go.mod h1:pYwdfH91IfpZVANVyUOhSIPZaFoJGxTFbZhFTx+dXZU=
+golang.org/x/sys v0.7.0 h1:3jlCCIQZPdOYu1h8BkNvLz8Kgwtae2cagcG/VamtZRU=
+golang.org/x/sys v0.7.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
