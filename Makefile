@@ -3,10 +3,12 @@
 age-plugin-tkey: app
 	go build ./cmd/age-plugin-tkey
 
+.PHONY: install
+install:
+	cp -af age-plugin-tkey /usr/local/bin/
+
 .PHONY: app
 app:
-	# TODO should it really make it itself?
-	make -C ../tkey-device-x25519 x25519/app.bin
 	cp -af ../tkey-device-x25519/x25519/app.bin cmd/age-plugin-tkey/
 
 .PHONY: clean

@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,47 @@ import (
 	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
 )
+
+const verbose = false
+
+func getPubKey(userSecret [userSecretSize]byte, requireTouch bool) ([]byte, error) {
+	t := tkey{}
+	if err := t.connect(verbose); err != nil {
+		return nil, fmt.Errorf("connect failed: %w", err)
+	}
+	defer t.disconnect()
+
+	// TODO setting userSecret to fixed (non-random), it looks like the
+	// pubkey doesn't change depending on touchRequired when run on
+	// hw, but it does in qemu!?
+	pubBytes, err := t.x25519.GetPubKey(domain, userSecret, requireTouch)
+	if err != nil {
+		return nil, fmt.Errorf("GetPubKey failed: %w", err)
+	}
+
+	return pubBytes, nil
+}
+
+func computeShared(userSecret [userSecretSize]byte, requireTouch bool, theirPubKey [32]byte) ([]byte, error) {
+	t := tkey{}
+	if err := t.connect(verbose); err != nil {
+		return nil, fmt.Errorf("connect failed: %w", err)
+	}
+	defer t.disconnect()
+
+	shared, err := t.x25519.ComputeShared(domain, userSecret, requireTouch, theirPubKey)
+	if err != nil {
+		return nil, fmt.Errorf("ComputeShared failed: %w", err)
+	}
+
+	return shared, nil
+}
+
+// nolint:typecheck // Avoid lint error when the embedding file is
+// missing. Makefile copies the device app binary here ./app.bin
+//
+//go:embed app.bin
+var appBinary []byte
 
 type tkey struct {
 	x25519 tkeyx25519.X25519
@@ -21,13 +63,11 @@ const (
 	wantAppName1 = "19  "
 )
 
-func (t *tkey) connect() error {
-	verbose := true // TODO
-
+func (t *tkey) connect(verbose bool) error {
 	tkeyclient.SilenceLogging()
 
 	// TODO not allowing for any custom devpath (or speed)
-	devPath, err := util.DetectSerialPort(true)
+	devPath, err := util.DetectSerialPort(verbose)
 	if err != nil {
 		return fmt.Errorf("DetectSerialPort failed: %w", err)
 	}
