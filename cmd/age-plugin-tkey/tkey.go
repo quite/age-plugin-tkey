@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/quite/age-plugin-tkey/internal/util"
 	"github.com/quite/tkeyx25519"
@@ -66,10 +67,13 @@ const (
 func (t *tkey) connect(verbose bool) error {
 	tkeyclient.SilenceLogging()
 
-	// TODO not allowing for any custom devpath (or speed)
-	devPath, err := util.DetectSerialPort(verbose)
-	if err != nil {
-		return fmt.Errorf("DetectSerialPort failed: %w", err)
+	devPath := os.Getenv("TKEY_PORT")
+	if devPath == "" {
+		var err error
+		devPath, err = util.DetectSerialPort(verbose)
+		if err != nil {
+			return fmt.Errorf("DetectSerialPort failed: %w", err)
+		}
 	}
 
 	tk := tkeyclient.New()
