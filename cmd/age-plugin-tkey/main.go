@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"filippo.io/age"
 	"filippo.io/age/plugin"
@@ -21,6 +22,7 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
+	"golang.org/x/term"
 )
 
 const (
@@ -50,9 +52,7 @@ func main() {
 	flag.BoolVar(&generateOnly, "generate", false, descGenerate)
 	flag.BoolVar(&generateOnly, "g", false, descGenerate)
 	flag.BoolVar(&requireTouch, "touch", false, "Require physical touch of TKey upon use of identity")
-	flag.Parse()
-
-	usage := func() {
+	flag.Usage = func() {
 		le.Printf(`Usage:
   --age-plugin string    For choosing state machine
   -g, --generate         Generate an identity backed by TKey
@@ -60,7 +60,6 @@ func main() {
                          upon X25519 key exchange (use with --generate)
 `)
 	}
-	flag.Usage = usage
 	flag.Parse()
 
 	if !generateOnly && agePlugin == "" {
@@ -154,8 +153,13 @@ func generate(requireTouch bool) bool {
 		return false
 	}
 
-	le.Printf("# recipient: %s\n", recipient)
-	le.Printf("# touchRequired: %t\n", requireTouch)
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		le.Printf("recipient: %s\n", recipient)
+	}
+
+	fmt.Printf("# created: %s\n", time.Now().Format(time.RFC3339))
+	fmt.Printf("# recipient: %s\n", recipient)
+	fmt.Printf("# touch required: %t\n", requireTouch)
 	fmt.Printf("%s\n", identity)
 
 	return true

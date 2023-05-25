@@ -25,7 +25,6 @@ to decrypt it.
 ```
 $ age-plugin-tkey --generate >my-keys
 # recipient: age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377
-# touchRequired: false
 $ echo "remember to fix all bugs!" | age --encrypt -a -r age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377 >note-to-self
 $ age -i my-keys --decrypt ./note-to-self
 remember to fix all bugs!
@@ -51,4 +50,5 @@ the instructions in the README.md there. Then just `make` here.
 
 For reproducability and maintaining a stable device app hash and thus
 identity we typically build in a container image. There is some stuff
-in [contrib/](contrib/) for doing that using podman, try `make`.
+in [contrib/](contrib/) for doing that using podman, you can try
+`make` there.

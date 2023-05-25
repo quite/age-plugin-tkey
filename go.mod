@@ -8,6 +8,7 @@ require (
 	github.com/tillitis/tkeyclient v0.0.0-20230515175551-f6bb10fe1c9d
 	go.bug.st/serial v1.5.0
 	golang.org/x/crypto v0.7.0
+	golang.org/x/term v0.6.0
 )
 
 require (
