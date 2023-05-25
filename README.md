@@ -16,7 +16,34 @@ it. This would mean that the public/private key no longer is the same,
 and decryption of data encrypted for the previous key pair will not be
 possible.
 
-# Building
+## Usage
+
+Here we create a new keypair/identity and learn about the public
+key/recipient that is us. Then we encrypt a note to self, and proceed
+to decrypt it.
+
+```
+$ age-plugin-tkey --generate >my-keys
+# recipient: age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377
+# touchRequired: false
+$ echo "remember to fix all bugs!" | age --encrypt -a -r age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377 >note-to-self
+$ age -i my-keys --decrypt ./note-to-self
+remember to fix all bugs!
+```
+
+To create an identity which requires a physical touch of TKey upon
+ECDH key exchange, add the flag `--touch` when generating.
+
+The file `my-keys` ends up containing a line beginning with
+`AGE-PLUGIN-TKEY-` which holds the parameters used for deriving the
+secret key on the TKey. The secret key itself never leaves the TKey
+hardware.
+
+To run towards an emulated TKey in QEMU instead of real hardware, you
+can set the environment variable `TKEY_PORT` to QEMU's char-device
+before running age, like `TKEY_PORT=/dev/pts/22`.
+
+## Building
 
 You first need to build the device app in a sibling directory. Do `git
 -C .. clone https://github.com/quite/tkey-device-x25519` and follow
