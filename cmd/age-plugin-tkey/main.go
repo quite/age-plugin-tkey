@@ -44,49 +44,81 @@ var domain = func() [domainSize]byte {
 // to stderr
 var le = log.New(os.Stderr, "", 0)
 
+var (
+	generateFlag, requireTouchFlag bool
+	agePluginFlag, outputFlag      string
+)
+
 func main() {
-	var generateOnly, requireTouch bool
-	var agePlugin string
-	flag.StringVar(&agePlugin, "age-plugin", "", "For choosing state machine")
+	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
 	descGenerate := "Generate an identity backed by TKey"
-	flag.BoolVar(&generateOnly, "generate", false, descGenerate)
-	flag.BoolVar(&generateOnly, "g", false, descGenerate)
-	flag.BoolVar(&requireTouch, "touch", false, "Require physical touch of TKey upon use of identity")
+	descOutput := "Write output to file OUTPUT"
+	flag.BoolVar(&generateFlag, "generate", false, descGenerate)
+	flag.BoolVar(&generateFlag, "g", false, descGenerate)
+	flag.StringVar(&outputFlag, "output", "", descOutput)
+	flag.StringVar(&outputFlag, "o", "", descOutput)
+	flag.BoolVar(&requireTouchFlag, "touch", false, "Require physical touch of TKey upon use of identity")
 	flag.Usage = func() {
 		le.Printf(`Usage:
-  -g, --generate         Generate an identity backed by TKey
-  --touch                Make the identity require physical touch of TKey
-                         upon X25519 key exchange (use with --generate)
+  -g, --generate       Generate an identity backed by TKey
+  -o, --output PATH    Output identity to file at PATH
+  --touch              Make the identity require physical touch of TKey
+                       upon X25519 key exchange (use with --generate)
 `)
 	}
 	flag.Parse()
 
-	if !generateOnly && agePlugin == "" {
+	os.Exit(run())
+}
+
+func run() int {
+	if !generateFlag && (requireTouchFlag || outputFlag != "") {
+		le.Printf("-o or --touch can only be used together with -g\n")
 		flag.Usage()
-		os.Exit(0)
+		return 2
 	}
 
-	if generateOnly {
-		if !generate(requireTouch) {
-			os.Exit(1)
+	if !generateFlag && agePluginFlag == "" {
+		flag.Usage()
+		return 0
+	}
+
+	switch {
+	case generateFlag:
+		out := os.Stdout
+		if outputFlag != "" {
+			f, err := os.OpenFile(outputFlag, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+			if err != nil {
+				le.Printf("OpenFile failed: %s\n", err)
+				return 1
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					le.Printf("Close failed: %s\n", err)
+				}
+			}()
+			out = f
 		}
-		os.Exit(0)
-	}
+		if !generate(out, requireTouchFlag) {
+			return 1
+		}
 
-	if agePlugin != "" {
-		switch agePlugin {
+	case agePluginFlag != "":
+		switch agePluginFlag {
 		case "identity-v1":
 			err := runIdentity()
 			if err != nil {
 				le.Printf("runIdentity failed: %s\n", err)
-				os.Exit(1)
+				return 1
 			}
-			os.Exit(0)
 		default:
 			le.Printf("unknown state machine\n")
-			os.Exit(1)
+			return 1
 		}
+
 	}
+
+	return 0
 }
 
 const (
@@ -101,7 +133,7 @@ type identityData struct {
 	pubBytes     [32]byte
 }
 
-func generate(requireTouch bool) bool {
+func generate(out *os.File, requireTouch bool) bool {
 	// Generate a privkey on the TKey and get hold of the pubkey
 
 	var userSecret [userSecretSize]byte
@@ -152,14 +184,14 @@ func generate(requireTouch bool) bool {
 		return false
 	}
 
-	if !term.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(out.Fd())) {
 		le.Printf("recipient: %s\n", recipient)
 	}
 
-	fmt.Printf("# created: %s\n", time.Now().Format(time.RFC3339))
-	fmt.Printf("# recipient: %s\n", recipient)
-	fmt.Printf("# touch required: %t\n", requireTouch)
-	fmt.Printf("%s\n", identity)
+	fmt.Fprintf(out, "# created: %s\n", time.Now().Format(time.RFC3339))
+	fmt.Fprintf(out, "# recipient: %s\n", recipient)
+	fmt.Fprintf(out, "# touch required: %t\n", requireTouch)
+	fmt.Fprintf(out, "%s\n", identity)
 
 	return true
 }
