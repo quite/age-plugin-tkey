@@ -50,5 +50,5 @@ You first need to build the device app in a sibling directory. Do `git
 the instructions in the README.md there. Then just `make` here.
 
 For reproducability and maintaining a stable device app hash and thus
-identity, there is some stuff in [contrib/](contrib/) for building
-using a container image.
+identity we typically build in a container image. There is some stuff
+in [contrib/](contrib/) for doing that using podman, try `make`.

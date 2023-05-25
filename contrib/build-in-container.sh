@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd "${0%/*}" || exit 1
+cd ..
 
 scriptf="$(mktemp)"
 
@@ -24,11 +25,13 @@ cached=/tmp/age-plugin-tkey-build-cache
 mkdir -p $cached/{go,dotcache}
 
 podman run --rm -it \
-       --mount type=bind,source=$PWD/..,destination=/age-plugin-tkey \
+       --mount type=bind,source=$PWD,destination=/age-plugin-tkey \
        --mount type=bind,source=$scriptf,destination=/inside.sh \
        --mount type=bind,source=$cached/go,destination=/root/go \
        --mount type=bind,source=$cached/dotcache,destination=/root/.cache \
-       age-plugin-tkey-builder \
+       tkey-apps-builder \
        /inside.sh
 
 rm -f "$scriptf"
+
+ls -l "$(realpath ./age-plugin-tkey)"
