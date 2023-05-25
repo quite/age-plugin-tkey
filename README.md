@@ -9,9 +9,6 @@ It embeds and uses the TKey device app
 doing X25519 ECDH. For communicating with the device app running on
 the TKey it uses [tkeyx25519](https://github.com/quite/tkeyx25519).
 
-- touch when? upon ECDH exchange, said filippo
-- uses random user_secret stored on disk to generate different identities. contrast USS --
-
 # Building
 
 You first need to build the device app in a sibling directory. Do `git
