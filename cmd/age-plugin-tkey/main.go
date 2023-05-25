@@ -54,7 +54,6 @@ func main() {
 	flag.BoolVar(&requireTouch, "touch", false, "Require physical touch of TKey upon use of identity")
 	flag.Usage = func() {
 		le.Printf(`Usage:
-  --age-plugin string    For choosing state machine
   -g, --generate         Generate an identity backed by TKey
   --touch                Make the identity require physical touch of TKey
                          upon X25519 key exchange (use with --generate)
