@@ -2,7 +2,7 @@
 Work In Progress
 
 Plugin for [age](https://github.com/FiloSottile/age) to use a Tillitis
-TKey USB security key.
+[TKey](https://github.com/tillitis/tillitis-key1) USB security key.
 
 For doing X25519 ECDH it embeds and runs the device app
 [tkey-device-x25519](https://github.com/quite/tkey-device-x25519) on
