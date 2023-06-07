@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/quite/age-plugin-tkey/internal/util"
 	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
 )
@@ -70,7 +69,7 @@ func (t *tkey) connect(verbose bool) error {
 	devPath := os.Getenv("TKEY_PORT")
 	if devPath == "" {
 		var err error
-		devPath, err = util.DetectSerialPort(verbose)
+		devPath, err = tkeyclient.DetectSerialPort(verbose)
 		if err != nil {
 			return fmt.Errorf("DetectSerialPort failed: %w", err)
 		}
