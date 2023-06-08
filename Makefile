@@ -10,6 +10,7 @@ install:
 .PHONY: copy-device-app
 copy-device-app:
 	cp -af ../tkey-device-x25519/x25519/app.bin cmd/age-plugin-tkey/
+	(cd cmd/age-plugin-tkey && sha512sum -c app.bin.sha512)
 
 .PHONY: clean
 clean:
