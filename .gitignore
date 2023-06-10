@@ -1,2 +1,3 @@
+/gotools/golangci-lint
 /age-plugin-tkey
-/cmd/age-plugin-tkey/app.bin
+/internal/tkey/app.bin

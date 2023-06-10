@@ -1,56 +1,71 @@
-package main
+package tkey
 
 import (
 	_ "embed"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
+	"golang.org/x/crypto/curve25519"
 )
 
-const verbose = false
+const (
+	pluginDomain = "tillitis.se/tkey"
+	verbose      = false
+)
 
-func getPubKey(userSecret [userSecretSize]byte, requireTouch bool) ([]byte, error) {
+var le = log.New(os.Stderr, "", 0)
+
+// nolint:typecheck // Avoid lint error when the embedding file is
+// missing. Makefile copies the device app binary here ./app.bin
+//
+//go:embed app.bin
+var AppBinary []byte
+
+func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {
+	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
+		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
+	}
+
 	t := tkey{}
 	if err := t.connect(verbose); err != nil {
 		return nil, fmt.Errorf("connect failed: %w", err)
 	}
 	defer t.disconnect()
 
-	// TODO setting userSecret to fixed (non-random), it looks like the
-	// pubkey doesn't change depending on touchRequired when run on
-	// hw, but it does in qemu!?
-	pubBytes, err := t.x25519.GetPubKey(domain, userSecret, requireTouch)
+	pubKey, err := t.x25519.GetPubKey(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret), requireTouch)
 	if err != nil {
 		return nil, fmt.Errorf("GetPubKey failed: %w", err)
 	}
 
-	return pubBytes, nil
+	return pubKey, nil
 }
 
-func computeShared(userSecret [userSecretSize]byte, requireTouch bool, theirPubKey [32]byte) ([]byte, error) {
+func ComputeShared(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, error) {
+	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
+		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
+	}
+	if l := len(theirPubKey); l != curve25519.PointSize {
+		return nil, fmt.Errorf("theirPubKey is %d bytes, expected %d", l, curve25519.PointSize)
+	}
+
 	t := tkey{}
 	if err := t.connect(verbose); err != nil {
 		return nil, fmt.Errorf("connect failed: %w", err)
 	}
 	defer t.disconnect()
 
-	shared, err := t.x25519.ComputeShared(domain, userSecret, requireTouch, theirPubKey)
+	shared, err := t.x25519.ComputeShared(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret), requireTouch, [curve25519.PointSize]byte(theirPubKey))
 	if err != nil {
 		return nil, fmt.Errorf("ComputeShared failed: %w", err)
 	}
 
 	return shared, nil
 }
-
-// nolint:typecheck // Avoid lint error when the embedding file is
-// missing. Makefile copies the device app binary here ./app.bin
-//
-//go:embed app.bin
-var appBinary []byte
 
 type tkey struct {
 	x25519 tkeyx25519.X25519
@@ -91,7 +106,7 @@ func (t *tkey) connect(verbose bool) error {
 		if verbose {
 			le.Printf("Device is in firmware mode. Loading app...\n")
 		}
-		if err := tk.LoadApp(appBinary, []byte{}); err != nil {
+		if err := tk.LoadApp(AppBinary, []byte{}); err != nil {
 			t.disconnect()
 			return fmt.Errorf("LoadApp failed: %w", err)
 		}
@@ -111,7 +126,7 @@ func (t *tkey) connect(verbose bool) error {
 
 func (t *tkey) disconnect() {
 	if err := t.x25519.Close(); err != nil {
-		le.Printf("%v\n", err)
+		le.Printf("%s\n", err)
 	}
 }
 
