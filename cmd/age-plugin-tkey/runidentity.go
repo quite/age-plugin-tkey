@@ -29,23 +29,35 @@ func runIdentity() error {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(line) == 0 {
-			continue
-		}
 		parts := strings.Split(line, " ")
 		if len(parts) < 2 {
-			return fmt.Errorf("stanza has less than 2 parts")
+			return fmt.Errorf("stanza must have at least prefix and type")
 		}
 		tag, typ, args := parts[0], parts[1], parts[2:]
 
+		var encodedData string
+		for {
+			if !scanner.Scan() {
+				return fmt.Errorf("scan data-lines: %w", scanner.Err())
+			}
+			line = scanner.Text()
+			encodedData += line
+			if len(line) < 64 {
+				break
+			}
+		}
+
 		if tag != "->" {
-			return fmt.Errorf("stanza must begin with '->'")
+			return fmt.Errorf("stanza prefix is not '->'")
 		}
 
 		switch typ {
 		case "add-identity":
 			if len(args) < 1 {
 				return fmt.Errorf("add-identity must have 1 arg")
+			}
+			if len(encodedData) > 0 {
+				return fmt.Errorf("expected empty body/no data after 'add-identity'")
 			}
 
 			name, idBytes, err := plugin.ParseIdentity(args[0])
@@ -85,15 +97,7 @@ func runIdentity() error {
 				return fmt.Errorf("recipientPubKey has wrong length")
 			}
 
-			var wrappedFileKeyStr string
-			for scanner.Scan() {
-				line = scanner.Text()
-				wrappedFileKeyStr += line
-				if len(line) < 64 {
-					break
-				}
-			}
-			wrappedFileKey, err := DecodeString(wrappedFileKeyStr)
+			wrappedFileKey, err := DecodeString(encodedData)
 			if err != nil {
 				return fmt.Errorf("decode wrappedFileKey failed: %w", err)
 			}
@@ -106,8 +110,15 @@ func runIdentity() error {
 		}
 
 		if typ == "done" {
+			if len(encodedData) > 0 {
+				return fmt.Errorf("expected empty body/no data after 'done'")
+			}
 			break
 		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("scan stanza first-line: %w", err)
 	}
 
 	if len(identities) == 0 {
@@ -127,16 +138,18 @@ func runIdentity() error {
 			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
 			fmt.Printf("%s\n", EncodeToString(fileKey))
 
-			var line string
-			// Should handle Scan returning false?
-			for scanner.Scan() {
-				line = scanner.Text()
-				if len(line) != 0 {
-					break
-				}
+			// get the expected response to file-key from age: `-> ok\n\n`
+			if !scanner.Scan() {
+				return fmt.Errorf("scan file-key response: %w", scanner.Err())
 			}
-			if line != "-> ok" {
+			if line := scanner.Text(); line != "-> ok" {
 				return fmt.Errorf("unexpected response to file-key: %s", line)
+			}
+			if !scanner.Scan() {
+				return fmt.Errorf("scan file-key response: %w", scanner.Err())
+			}
+			if scanner.Text() != "" {
+				le.Printf("expected empty body/no data after 'ok'")
 			}
 
 			// we successfully unwrapped using this id, so stop
