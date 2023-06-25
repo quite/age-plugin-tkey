@@ -127,6 +127,18 @@ func runIdentity() error {
 			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
 			fmt.Printf("%s\n", EncodeToString(fileKey))
 
+			var line string
+			// Should handle Scan returning false?
+			for scanner.Scan() {
+				line = scanner.Text()
+				if len(line) != 0 {
+					break
+				}
+			}
+			if line != "-> ok" {
+				return fmt.Errorf("unexpected response to file-key: %s", line)
+			}
+
 			// we successfully unwrapped using this id, so stop
 			break
 		}
