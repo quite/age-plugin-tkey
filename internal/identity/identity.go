@@ -103,7 +103,7 @@ func (id *Identity) Unwrap(recipientPubKey []byte, wrappedFileKey []byte) ([]byt
 	if err != nil {
 		// TODO maybe this should really error out, or send back error?
 		fmt.Fprintf(os.Stderr, "computeShared failed: %s", err)
-		return nil, nil
+		return nil, err
 	}
 
 	salt := make([]byte, 0, len(recipientPubKey)+len(id.pubKey))

@@ -11,7 +11,8 @@ mkdir -p /src
 cd /src
 cp -af /age-plugin-tkey .
 git clone --depth=1 --branch=v0.0.1 https://github.com/tillitis/tkey-libs
-git clone --depth=1 https://github.com/quite/tkey-device-x25519
+# TODO change to main once merged
+git clone --depth=1 --branch=rework https://github.com/quite/tkey-device-x25519
 make -C /src/tkey-libs -j
 make -C /src/tkey-device-x25519 -j
 make -C /src/age-plugin-tkey clean

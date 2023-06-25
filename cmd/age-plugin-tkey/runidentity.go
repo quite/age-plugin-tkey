@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"filippo.io/age"
 	"filippo.io/age/plugin"
 	"github.com/quite/age-plugin-tkey/internal/identity"
 	"golang.org/x/crypto/curve25519"
@@ -109,18 +110,20 @@ func runIdentity() error {
 		}
 	}
 
+	if len(identities) == 0 {
+		return fmt.Errorf("no identities specified")
+	}
+
 	for _, rcpt := range recipients {
 		for _, id := range identities {
 			fileKey, err := id.Unwrap(rcpt.pubKey, rcpt.wrappedFileKey)
 			if err != nil {
+				if errors.Is(err, age.ErrIncorrectIdentity) {
+					continue
+				}
 				return err
 			}
-			// TODO ugly, is something like this really needed?
-			if fileKey == nil {
-				continue
-			}
 
-			// TODO is it correct to just pass on the fileIndex like this
 			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
 			fmt.Printf("%s\n", EncodeToString(fileKey))
 
