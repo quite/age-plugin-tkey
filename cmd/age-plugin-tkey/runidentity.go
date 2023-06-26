@@ -12,6 +12,8 @@ import (
 	"filippo.io/age"
 	"filippo.io/age/plugin"
 	"github.com/quite/age-plugin-tkey/internal/identity"
+	"github.com/quite/age-plugin-tkey/internal/tkey"
+	"github.com/tillitis/tkeyclient"
 	"golang.org/x/crypto/curve25519"
 )
 
@@ -28,7 +30,7 @@ type stanza struct {
 }
 
 func runIdentity() error {
-	identities := []*identity.Identity{}
+	rawIdentities := [][]byte{}
 	recipients := []*recipient{}
 
 	r := bufio.NewReader(os.Stdin)
@@ -58,14 +60,7 @@ func runIdentity() error {
 				continue
 			}
 
-			id, err := identity.NewIdentityFromBytes(idBytes)
-			if err != nil {
-				// TODO should some error in there make us error out?
-				le.Printf("identity skipped: NewIdentityFromBytes failed: %s\n", err)
-				continue
-			}
-
-			identities = append(identities, id)
+			rawIdentities = append(rawIdentities, idBytes)
 
 		case "recipient-stanza":
 			if len(s.args) != 3 || len(s.data) == 0 {
@@ -102,8 +97,13 @@ func runIdentity() error {
 		}
 	}
 
-	if len(identities) == 0 {
+	if len(rawIdentities) == 0 {
 		return fmt.Errorf("no identities specified")
+	}
+
+	identities, err := tryIdentities(rawIdentities, r)
+	if err != nil {
+		return err
 	}
 
 	for _, rcpt := range recipients {
@@ -137,6 +137,78 @@ func runIdentity() error {
 	fmt.Printf("-> done\n\n")
 
 	return nil
+}
+
+func tryIdentities(rawIdentities [][]byte, r *bufio.Reader) ([]*identity.Identity, error) {
+	var identities []*identity.Identity
+
+	for _, idBytes := range rawIdentities {
+		id, err := tryIdentity(idBytes, r)
+		if err != nil {
+			return nil, err
+		}
+
+		if id != nil {
+			identities = append(identities, id)
+		}
+	}
+
+	return identities, nil
+}
+
+// tryIdentity returns (nil, nil) when the identity could not be
+// "opened" but this was not deemed a fatal error
+func tryIdentity(idBytes []byte, r *bufio.Reader) (*identity.Identity, error) {
+tryAgain:
+	id, err := identity.NewIdentityFromBytes(idBytes)
+	if err != nil {
+		// TODO? we only do confirm if no device, or wrong device app
+		if !errors.Is(err, tkeyclient.ErrNoDevice) && !errors.Is(err, tkey.ErrWrongDeviceApp) {
+			le.Printf("identity skipped: NewIdentityFromBytes failed: %s\n", err)
+			return nil, nil
+		}
+
+		// TODO works because len(msg) < 48 -- we should wrap the base64!
+		msg := "Please plug in your TKey"
+		if errors.Is(err, tkey.ErrWrongDeviceApp) {
+			msg = "TKey is running wrong app, please reconnect it"
+		}
+
+		fmt.Printf("-> confirm %s %s\n", EncodeToString([]byte("Try again")),
+			EncodeToString([]byte("Cancel")))
+		fmt.Printf("%s\n", EncodeToString([]byte(msg)))
+
+		s, err := readStanza(r)
+		if err != nil {
+			return nil, fmt.Errorf("readStanza confirm response failed: %w", err)
+		}
+
+		switch s.typ {
+		case "ok":
+			if len(s.args) != 1 || len(s.data) > 0 {
+				return nil, fmt.Errorf("malformed confirm response stanza: %q", s)
+			}
+			switch s.args[0] {
+			case "yes":
+				goto tryAgain
+			case "no":
+				return nil, nil
+			default:
+				return nil, fmt.Errorf("malformed confirm response stanza: %q", s)
+			}
+
+		case "fail":
+			if len(s.args) != 0 || len(s.data) > 0 {
+				return nil, fmt.Errorf("malformed confirm response stanza: %q", s)
+			}
+			return nil, nil
+
+		default:
+			return nil, fmt.Errorf("malformed confirm response stanza: %q", s)
+		}
+	}
+
+	return id, nil
 }
 
 func readStanza(r *bufio.Reader) (*stanza, error) {

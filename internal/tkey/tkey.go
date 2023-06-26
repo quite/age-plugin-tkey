@@ -14,6 +14,10 @@ import (
 )
 
 const (
+	ErrWrongDeviceApp = constError("wrong device app")
+)
+
+const (
 	pluginDomain = "tillitis.se/tkey"
 	verbose      = false
 )
@@ -118,7 +122,7 @@ func (t *tkey) connect(verbose bool) error {
 				"Please unplug and plug it in again.\n")
 		}
 		t.disconnect()
-		return fmt.Errorf("Wrong app")
+		return ErrWrongDeviceApp
 	}
 
 	return nil
@@ -165,4 +169,10 @@ func isWantedApp(x25519 tkeyx25519.X25519) bool {
 	// not caring about nameVer.Version
 	return nameVer.Name0 == wantAppName0 &&
 		nameVer.Name1 == wantAppName1
+}
+
+type constError string
+
+func (err constError) Error() string {
+	return string(err)
 }
