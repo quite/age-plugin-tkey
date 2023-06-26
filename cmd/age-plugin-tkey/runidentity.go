@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -20,47 +21,35 @@ type recipient struct {
 	wrappedFileKey []byte
 }
 
+type stanza struct {
+	typ  string
+	args []string
+	data []byte
+}
+
 func runIdentity() error {
 	identities := []*identity.Identity{}
 	recipients := []*recipient{}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Split(bufio.ScanLines)
+	r := bufio.NewReader(os.Stdin)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(line, " ")
-		if len(parts) < 2 {
-			return fmt.Errorf("stanza must have at least prefix and type")
+	for {
+		s, err := readStanza(r)
+		if err != nil {
+			return fmt.Errorf("readStanza failed: %w", err)
 		}
-		tag, typ, args := parts[0], parts[1], parts[2:]
-
-		var encodedData string
-		for {
-			if !scanner.Scan() {
-				return fmt.Errorf("scan data-lines: %w", scanner.Err())
-			}
-			line = scanner.Text()
-			encodedData += line
-			if len(line) < 64 {
-				break
-			}
+		if s == nil {
+			// no more stanzas
+			break
 		}
 
-		if tag != "->" {
-			return fmt.Errorf("stanza prefix is not '->'")
-		}
-
-		switch typ {
+		switch s.typ {
 		case "add-identity":
-			if len(args) < 1 {
-				return fmt.Errorf("add-identity must have 1 arg")
-			}
-			if len(encodedData) > 0 {
-				return fmt.Errorf("expected empty body/no data after 'add-identity'")
+			if len(s.args) < 1 || len(s.data) > 0 {
+				return fmt.Errorf("malformed add-identity stanza: %q", s)
 			}
 
-			name, idBytes, err := plugin.ParseIdentity(args[0])
+			name, idBytes, err := plugin.ParseIdentity(s.args[0])
 			if err != nil {
 				return fmt.Errorf("ParseIdentity failed: %w", err)
 			}
@@ -79,16 +68,17 @@ func runIdentity() error {
 			identities = append(identities, id)
 
 		case "recipient-stanza":
-			if len(args) < 3 {
-				return fmt.Errorf("recipient-stanza must have 3 args")
+			if len(s.args) < 3 || len(s.data) == 0 {
+				return fmt.Errorf("malformed recipient-stanza: %q", s)
 			}
 
-			fileIndex, recipientType, recipientPubKeyStr := args[0], args[1], args[2]
+			fileIndex, recipientType, recipientPubKeyStr := s.args[0], s.args[1], s.args[2]
 			if recipientType != "X25519" {
 				le.Printf("recipient skipped: type is %s, expected X25519\n", recipientType)
 				continue
 			}
 
+			// gentle reminder: this pubkey is ephemeral, not sender's identity
 			recipientPubKey, err := DecodeString(recipientPubKeyStr)
 			if err != nil {
 				return fmt.Errorf("decode recipientPubKey failed: %w", err)
@@ -97,28 +87,19 @@ func runIdentity() error {
 				return fmt.Errorf("recipientPubKey has wrong length")
 			}
 
-			wrappedFileKey, err := DecodeString(encodedData)
-			if err != nil {
-				return fmt.Errorf("decode wrappedFileKey failed: %w", err)
-			}
-
 			recipients = append(recipients, &recipient{
 				fileIndex:      fileIndex,
 				pubKey:         recipientPubKey,
-				wrappedFileKey: wrappedFileKey,
+				wrappedFileKey: s.data,
 			})
 		}
 
-		if typ == "done" {
-			if len(encodedData) > 0 {
-				return fmt.Errorf("expected empty body/no data after 'done'")
+		if s.typ == "done" {
+			if len(s.args) > 0 || len(s.data) > 0 {
+				return fmt.Errorf("malformed done stanza: %q", s)
 			}
 			break
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("scan stanza first-line: %w", err)
 	}
 
 	if len(identities) == 0 {
@@ -136,20 +117,16 @@ func runIdentity() error {
 			}
 
 			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
+			// spec says len(fileKey) == 16, so we don't care to wrap
+			// base64 at 64 columns (or about final line < 64 columns)
 			fmt.Printf("%s\n", EncodeToString(fileKey))
 
-			// get the expected response to file-key from age: `-> ok\n\n`
-			if !scanner.Scan() {
-				return fmt.Errorf("scan file-key response: %w", scanner.Err())
+			s, err := readStanza(r)
+			if err != nil {
+				return fmt.Errorf("readStanza file-key response failed: %w", err)
 			}
-			if line := scanner.Text(); line != "-> ok" {
-				return fmt.Errorf("unexpected response to file-key: %s", line)
-			}
-			if !scanner.Scan() {
-				return fmt.Errorf("scan file-key response: %w", scanner.Err())
-			}
-			if scanner.Text() != "" {
-				le.Printf("expected empty body/no data after 'ok'")
+			if s.typ != "ok" || len(s.args) > 0 || len(s.data) > 0 {
+				return fmt.Errorf("malformed file-key response stanza: %q", s)
 			}
 
 			// we successfully unwrapped using this id, so stop
@@ -160,6 +137,49 @@ func runIdentity() error {
 	fmt.Printf("-> done\n\n")
 
 	return nil
+}
+
+func readStanza(r *bufio.Reader) (*stanza, error) {
+	line, err := r.ReadBytes('\n')
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			// no more stanzas
+			return nil, nil
+		}
+		return nil, fmt.Errorf("read stanza first-line failed: %w", err)
+	}
+
+	s := &stanza{}
+
+	parts := strings.Split(strings.TrimSuffix(string(line), "\n"), " ")
+	if len(parts) < 2 || (len(parts) > 0 && parts[0] != "->") {
+		return nil, fmt.Errorf("malformed stanza first-line: %q", line)
+	}
+
+	s.typ = parts[1]
+	s.args = parts[2:] // empty slice if len(parts) == 2
+
+	var encodedData string
+	for {
+		line, err = r.ReadBytes('\n')
+		if err != nil {
+			return nil, fmt.Errorf("stanza data read failed: %w", err)
+		}
+		encodedData += strings.TrimSuffix(string(line), "\n")
+		if len(line) < 64 {
+			break
+		}
+	}
+
+	if len(encodedData) > 0 {
+		data, err := DecodeString(encodedData)
+		if err != nil {
+			return nil, fmt.Errorf("decode stanza data: %w", err)
+		}
+		s.data = data
+	}
+
+	return s, nil
 }
 
 var b64 = base64.RawStdEncoding.Strict()
