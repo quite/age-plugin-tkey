@@ -45,7 +45,7 @@ func runIdentity() error {
 
 		switch s.typ {
 		case "add-identity":
-			if len(s.args) < 1 || len(s.data) > 0 {
+			if len(s.args) != 1 || len(s.data) > 0 {
 				return fmt.Errorf("malformed add-identity stanza: %q", s)
 			}
 
@@ -68,7 +68,7 @@ func runIdentity() error {
 			identities = append(identities, id)
 
 		case "recipient-stanza":
-			if len(s.args) < 3 || len(s.data) == 0 {
+			if len(s.args) != 3 || len(s.data) == 0 {
 				return fmt.Errorf("malformed recipient-stanza: %q", s)
 			}
 
@@ -95,7 +95,7 @@ func runIdentity() error {
 		}
 
 		if s.typ == "done" {
-			if len(s.args) > 0 || len(s.data) > 0 {
+			if len(s.args) != 0 || len(s.data) > 0 {
 				return fmt.Errorf("malformed done stanza: %q", s)
 			}
 			break
@@ -125,7 +125,7 @@ func runIdentity() error {
 			if err != nil {
 				return fmt.Errorf("readStanza file-key response failed: %w", err)
 			}
-			if s.typ != "ok" || len(s.args) > 0 || len(s.data) > 0 {
+			if s.typ != "ok" || len(s.args) != 0 || len(s.data) > 0 {
 				return fmt.Errorf("malformed file-key response stanza: %q", s)
 			}
 
