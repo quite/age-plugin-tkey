@@ -37,22 +37,23 @@ func main() {
 	// TODO --uss ?
 	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
 	descGenerate := "Generate an identity backed by TKey"
-	descOutput := "Write output to file OUTPUT"
+	descOutput := "Output identity to file at PATH"
+	descTouch := "Make the identity require physical touch of TKey upon X25519 key exchange (use with --generate)"
+	descVersion := "Output version information and exit"
 	flag.BoolVar(&generateFlag, "generate", false, descGenerate)
 	flag.BoolVar(&generateFlag, "g", false, descGenerate)
 	flag.StringVar(&outputFlag, "output", "", descOutput)
 	flag.StringVar(&outputFlag, "o", "", descOutput)
-	flag.BoolVar(&requireTouchFlag, "touch", false, "Require physical touch of TKey upon use of identity")
-	flag.BoolVar(&versionFlag, "version", false, "Output version information and exit")
+	flag.BoolVar(&requireTouchFlag, "touch", false, descTouch)
+	flag.BoolVar(&versionFlag, "version", false, descVersion)
 	flag.Usage = func() {
 		le.Printf(`Usage:
-  -g, --generate       Generate an identity backed by TKey
-  -o, --output PATH    Output identity to file at PATH
-  --touch              Make the identity require physical touch of TKey
-                       upon X25519 key exchange (use with --generate)
-  --version            Output version information and exit
+  -g, --generate     %s
+  -o, --output PATH  %s
+  --touch            %s
+  --version          %s
 
-%s`, deviceAppInfo)
+%s`, descGenerate, descOutput, wrap(descTouch, 80-21, 21), descVersion, deviceAppInfo)
 	}
 	flag.Parse()
 
@@ -66,7 +67,7 @@ func main() {
 
 func run() int {
 	if !generateFlag && (requireTouchFlag || outputFlag != "") {
-		le.Printf("-o or --touch can only be used together with -g\n")
+		le.Printf("-o and --touch can only be used together with -g\n")
 		flag.Usage()
 		return 2
 	}
@@ -77,7 +78,7 @@ func run() int {
 	}
 
 	if generateFlag && agePluginFlag != "" {
-		le.Printf("Cannot use both -g and --age-plugin\n")
+		le.Printf("Cannot only use one of -g and --age-plugin\n")
 		flag.Usage()
 		return 2
 	}
@@ -130,4 +131,23 @@ func getBuildInfo() string {
 		version = sb.String()
 	}
 	return version
+}
+
+func wrap(s string, cols int, indent int) string {
+	words := strings.Fields(strings.TrimSpace(s))
+	if len(words) == 0 {
+		return s
+	}
+	out := words[0]
+	left := cols - len(out)
+	for _, w := range words[1:] {
+		if (1 + len(w)) > left {
+			out += "\n" + strings.Repeat(" ", indent) + w
+			left = cols - len(w)
+			continue
+		}
+		out += " " + w
+		left -= (1 + len(w))
+	}
+	return out
 }
