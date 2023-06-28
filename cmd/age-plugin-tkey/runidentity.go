@@ -51,7 +51,7 @@ func runIdentity() error {
 				return fmt.Errorf("malformed add-identity stanza: %q", s)
 			}
 
-			name, idBytes, err := plugin.ParseIdentity(s.args[0])
+			name, rawID, err := plugin.ParseIdentity(s.args[0])
 			if err != nil {
 				return fmt.Errorf("ParseIdentity failed: %w", err)
 			}
@@ -60,7 +60,7 @@ func runIdentity() error {
 				continue
 			}
 
-			rawIdentities = append(rawIdentities, idBytes)
+			rawIdentities = append(rawIdentities, rawID)
 
 		case "recipient-stanza":
 			if len(s.args) != 3 || len(s.data) == 0 {
@@ -142,8 +142,8 @@ func runIdentity() error {
 func tryIdentities(rawIdentities [][]byte, r *bufio.Reader) ([]*identity.Identity, error) {
 	var identities []*identity.Identity
 
-	for _, idBytes := range rawIdentities {
-		id, err := tryIdentity(idBytes, r)
+	for _, rawID := range rawIdentities {
+		id, err := tryIdentity(rawID, r)
 		if err != nil {
 			return nil, err
 		}
@@ -158,13 +158,13 @@ func tryIdentities(rawIdentities [][]byte, r *bufio.Reader) ([]*identity.Identit
 
 // tryIdentity returns (nil, nil) when the identity could not be
 // "opened" but this was not deemed a fatal error
-func tryIdentity(idBytes []byte, r *bufio.Reader) (*identity.Identity, error) {
+func tryIdentity(rawID []byte, r *bufio.Reader) (*identity.Identity, error) {
 tryAgain:
-	id, err := identity.NewIdentityFromBytes(idBytes)
+	id, err := identity.NewIdentityFromRawID(rawID)
 	if err != nil {
 		// TODO? we only do confirm if no device, or wrong device app
 		if !errors.Is(err, tkeyclient.ErrNoDevice) && !errors.Is(err, tkey.ErrWrongDeviceApp) {
-			le.Printf("identity skipped: NewIdentityFromBytes failed: %s\n", err)
+			le.Printf("identity skipped: NewIdentityFromRawID failed: %s\n", err)
 			return nil, nil
 		}
 

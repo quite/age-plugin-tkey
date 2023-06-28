@@ -53,8 +53,8 @@ func NewIdentity(userSecret []byte, requireTouch bool) (*Identity, error) {
 	}, nil
 }
 
-func NewIdentityFromBytes(identity []byte) (*Identity, error) {
-	userSecret, requireTouch, pubKeyHashPart, err := parseBytes(identity)
+func NewIdentityFromRawID(rawID []byte) (*Identity, error) {
+	userSecret, requireTouch, pubKeyHashPart, err := parseBytes(rawID)
 	if err != nil {
 		return nil, fmt.Errorf("parseBytes failed: %w", err)
 	}
