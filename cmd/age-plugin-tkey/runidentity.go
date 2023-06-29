@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -117,9 +116,7 @@ func runIdentity() error {
 			}
 
 			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
-			// spec says len(fileKey) == 16, so we don't care to wrap
-			// base64 at 64 columns (or about final line < 64 columns)
-			fmt.Printf("%s\n", EncodeToString(fileKey))
+			fmt.Printf("%s", EncodeToBody(fileKey))
 
 			s, err := readStanza(r)
 			if err != nil {
@@ -168,15 +165,13 @@ tryAgain:
 			return nil, nil
 		}
 
-		// TODO works because len(msg) < 48 -- we should wrap the base64!
-		msg := "Please plug in your TKey"
-		if errors.Is(err, tkey.ErrWrongDeviceApp) {
-			msg = "TKey is running wrong app, please reconnect it"
-		}
-
 		fmt.Printf("-> confirm %s %s\n", EncodeToString([]byte("Try again")),
 			EncodeToString([]byte("Cancel")))
-		fmt.Printf("%s\n", EncodeToString([]byte(msg)))
+		confirmMsg := "Please plug in your TKey"
+		if errors.Is(err, tkey.ErrWrongDeviceApp) {
+			confirmMsg = "TKey is running wrong app, please reconnect it"
+		}
+		fmt.Printf("%s", EncodeToBody([]byte(confirmMsg)))
 
 		s, err := readStanza(r)
 		if err != nil {
@@ -253,15 +248,3 @@ func readStanza(r *bufio.Reader) (*stanza, error) {
 
 	return s, nil
 }
-
-var b64 = base64.RawStdEncoding.Strict()
-
-func DecodeString(s string) ([]byte, error) {
-	// CR and LF are ignored by DecodeString, but we don't want any malleability.
-	if strings.ContainsAny(s, "\n\r") {
-		return nil, errors.New(`unexpected newline character`)
-	}
-	return b64.DecodeString(s)
-}
-
-var EncodeToString = b64.EncodeToString
