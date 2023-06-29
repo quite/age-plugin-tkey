@@ -126,6 +126,10 @@ func (id *Identity) Unwrap(recipientPubKey []byte, wrappedFileKey []byte) ([]byt
 	return fileKey, nil
 }
 
+func (id *Identity) RequireTouch() bool {
+	return id.requireTouch
+}
+
 func (id *Identity) bytes() []byte {
 	var buf bytes.Buffer
 

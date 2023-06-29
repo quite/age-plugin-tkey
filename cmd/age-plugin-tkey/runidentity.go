@@ -107,6 +107,16 @@ func runIdentity() error {
 
 	for _, rcpt := range recipients {
 		for _, id := range identities {
+
+			if id.RequireTouch() {
+				fmt.Printf("-> msg\n")
+				fmt.Printf("%s", EncodeToBody([]byte("Touch your TKey to confirm decryption")))
+				// TODO? we don't care what the response is
+				if _, err := readStanza(r); err != nil {
+					return fmt.Errorf("readStanza msg response failed: %w", err)
+				}
+			}
+
 			fileKey, err := id.Unwrap(rcpt.pubKey, rcpt.wrappedFileKey)
 			if err != nil {
 				if errors.Is(err, age.ErrIncorrectIdentity) {
