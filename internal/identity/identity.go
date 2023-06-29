@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"filippo.io/age"
 	"filippo.io/age/plugin"
@@ -101,8 +100,6 @@ func (id *Identity) EncodeRecipient() (string, error) {
 func (id *Identity) Unwrap(recipientPubKey []byte, wrappedFileKey []byte) ([]byte, error) {
 	sharedSecret, err := tkey.ComputeShared(id.userSecret, id.requireTouch, recipientPubKey)
 	if err != nil {
-		// TODO maybe this should really error out, or send back error?
-		fmt.Fprintf(os.Stderr, "computeShared failed: %s", err)
 		return nil, err
 	}
 

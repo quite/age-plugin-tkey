@@ -12,6 +12,7 @@ import (
 	"filippo.io/age/plugin"
 	"github.com/quite/age-plugin-tkey/internal/identity"
 	"github.com/quite/age-plugin-tkey/internal/tkey"
+	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
 	"golang.org/x/crypto/curve25519"
 )
@@ -121,6 +122,18 @@ func runIdentity() error {
 				if errors.Is(err, age.ErrIncorrectIdentity) {
 					continue
 				}
+
+				if e := new(tkeyx25519.ResponseStatusNotOKError); errors.As(err, &e) {
+					if e.Code() == tkeyx25519.StatusTouchTimeout {
+						writeStanza("msg", nil, []byte("TKey not touched, not decrypting using this identity"))
+						// TODO? we don't care what the response is
+						if _, err = readStanza(r); err != nil {
+							return fmt.Errorf("readStanza msg response failed: %w", err)
+						}
+						continue
+					}
+				}
+
 				return err
 			}
 
