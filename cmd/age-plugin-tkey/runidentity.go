@@ -180,15 +180,23 @@ func tryIdentity(rawID []byte, r *bufio.Reader) (*identity.Identity, error) {
 tryAgain:
 	id, err := identity.NewIdentityFromRawID(rawID)
 	if err != nil {
-		// TODO? we only do confirm if no device, or wrong device app
-		if !errors.Is(err, tkeyclient.ErrNoDevice) && !errors.Is(err, tkey.ErrWrongDeviceApp) {
+		// TODO? we only do confirm in these specific cases; and
+		// should we do all of them?
+		if !errors.Is(err, tkeyclient.ErrNoDevice) &&
+			!errors.Is(err, tkey.ErrWrongDeviceApp) &&
+			!errors.Is(err, identity.ErrWrongDevice) {
 			le.Printf("identity skipped: NewIdentityFromRawID failed: %s\n", err)
 			return nil, nil
 		}
 
-		confirmMsg := "Please plug in your TKey"
-		if errors.Is(err, tkey.ErrWrongDeviceApp) {
+		var confirmMsg string
+		switch {
+		case errors.Is(err, tkeyclient.ErrNoDevice):
+			confirmMsg = "Please plug in your TKey"
+		case errors.Is(err, tkey.ErrWrongDeviceApp):
 			confirmMsg = "TKey is running wrong app, please reconnect it"
+		case errors.Is(err, identity.ErrWrongDevice):
+			confirmMsg = "Maybe wrong TKey or identity created using different tkey-device-x25519 app"
 		}
 		writeStanza("confirm", []string{
 			EncodeToString([]byte("Try again")),

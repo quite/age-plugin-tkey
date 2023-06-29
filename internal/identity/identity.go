@@ -19,6 +19,10 @@ import (
 )
 
 const (
+	ErrWrongDevice = constError("wrong TKey or difference tkey-device-x25519 app")
+)
+
+const (
 	identitySize       = tkeyx25519.UserSecretSize + 1 + pubKeyHashPartSize
 	pubKeyHashPartSize = 2
 	// These areas defined in age:
@@ -65,7 +69,7 @@ func NewIdentityFromRawID(rawID []byte) (*Identity, error) {
 
 	newHash := blake2s.Sum256(pubKey)
 	if !bytes.Equal(newHash[:pubKeyHashPartSize], pubKeyHashPart) {
-		return nil, fmt.Errorf("pubkey hash does not match, wrong TKey or tkey-device-x25519 app changed?")
+		return nil, ErrWrongDevice
 	}
 
 	return &Identity{
@@ -176,4 +180,10 @@ func aeadDecrypt(key []byte, size int, ciphertext []byte) ([]byte, error) {
 	}
 	nonce := make([]byte, chacha20poly1305.NonceSize)
 	return aead.Open(nil, nonce, ciphertext, nil)
+}
+
+type constError string
+
+func (err constError) Error() string {
+	return string(err)
 }
