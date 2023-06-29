@@ -109,8 +109,7 @@ func runIdentity() error {
 		for _, id := range identities {
 
 			if id.RequireTouch() {
-				fmt.Printf("-> msg\n")
-				fmt.Printf("%s", EncodeToBody([]byte("Touch your TKey to confirm decryption")))
+				writeStanza("msg", nil, []byte("Touch your TKey to confirm decryption"))
 				// TODO? we don't care what the response is
 				if _, err := readStanza(r); err != nil {
 					return fmt.Errorf("readStanza msg response failed: %w", err)
@@ -125,8 +124,7 @@ func runIdentity() error {
 				return err
 			}
 
-			fmt.Printf("-> file-key %s\n", rcpt.fileIndex)
-			fmt.Printf("%s", EncodeToBody(fileKey))
+			writeStanza("file-key", []string{rcpt.fileIndex}, fileKey)
 
 			s, err := readStanza(r)
 			if err != nil {
@@ -141,7 +139,7 @@ func runIdentity() error {
 		}
 	}
 
-	fmt.Printf("-> done\n\n")
+	writeStanza("done", nil, nil)
 
 	return nil
 }
@@ -175,13 +173,14 @@ tryAgain:
 			return nil, nil
 		}
 
-		fmt.Printf("-> confirm %s %s\n", EncodeToString([]byte("Try again")),
-			EncodeToString([]byte("Cancel")))
 		confirmMsg := "Please plug in your TKey"
 		if errors.Is(err, tkey.ErrWrongDeviceApp) {
 			confirmMsg = "TKey is running wrong app, please reconnect it"
 		}
-		fmt.Printf("%s", EncodeToBody([]byte(confirmMsg)))
+		writeStanza("confirm", []string{
+			EncodeToString([]byte("Try again")),
+			EncodeToString([]byte("Cancel")),
+		}, []byte(confirmMsg))
 
 		s, err := readStanza(r)
 		if err != nil {
@@ -216,8 +215,19 @@ tryAgain:
 	return id, nil
 }
 
+const stanzaPrefix = "->"
+
+func writeStanza(typ string, args []string, data []byte) {
+	firstLine := fmt.Sprintf("%s %s", stanzaPrefix, typ)
+	for _, arg := range args {
+		firstLine += fmt.Sprintf(" %s", arg)
+	}
+	fmt.Fprintf(os.Stdout, "%s\n", firstLine)
+	fmt.Fprintf(os.Stdout, "%s", EncodeToBody(data))
+}
+
 func readStanza(r *bufio.Reader) (*stanza, error) {
-	line, err := r.ReadBytes('\n')
+	firstLine, err := r.ReadBytes('\n')
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			// no more stanzas
@@ -228,9 +238,9 @@ func readStanza(r *bufio.Reader) (*stanza, error) {
 
 	s := &stanza{}
 
-	parts := strings.Split(strings.TrimSuffix(string(line), "\n"), " ")
-	if len(parts) < 2 || (len(parts) > 0 && parts[0] != "->") {
-		return nil, fmt.Errorf("malformed stanza first-line: %q", line)
+	parts := strings.Split(strings.TrimSuffix(string(firstLine), "\n"), " ")
+	if len(parts) < 2 || (len(parts) > 0 && parts[0] != stanzaPrefix) {
+		return nil, fmt.Errorf("malformed stanza first-line: %q", firstLine)
 	}
 
 	s.typ = parts[1]
@@ -238,7 +248,7 @@ func readStanza(r *bufio.Reader) (*stanza, error) {
 
 	var encodedData string
 	for {
-		line, err = r.ReadBytes('\n')
+		line, err := r.ReadBytes('\n')
 		if err != nil {
 			return nil, fmt.Errorf("stanza data read failed: %w", err)
 		}
