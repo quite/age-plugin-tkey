@@ -49,7 +49,7 @@ func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {
 	return pubKey, nil
 }
 
-func ComputeShared(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, error) {
+func DoECDH(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, error) {
 	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
 		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
 	}
@@ -63,9 +63,9 @@ func ComputeShared(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]
 	}
 	defer t.disconnect()
 
-	shared, err := t.x25519.ComputeShared(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret), requireTouch, [curve25519.PointSize]byte(theirPubKey))
+	shared, err := t.x25519.DoECDH(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret), requireTouch, [curve25519.PointSize]byte(theirPubKey))
 	if err != nil {
-		return nil, fmt.Errorf("ComputeShared failed: %w", err)
+		return nil, fmt.Errorf("DoECDH failed: %w", err)
 	}
 
 	return shared, nil

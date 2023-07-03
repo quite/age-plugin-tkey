@@ -102,7 +102,7 @@ func (id *Identity) EncodeRecipient() (string, error) {
 }
 
 func (id *Identity) Unwrap(recipientPubKey []byte, wrappedFileKey []byte) ([]byte, error) {
-	sharedSecret, err := tkey.ComputeShared(id.userSecret, id.requireTouch, recipientPubKey)
+	sharedSecret, err := tkey.DoECDH(id.userSecret, id.requireTouch, recipientPubKey)
 	if err != nil {
 		return nil, err
 	}
