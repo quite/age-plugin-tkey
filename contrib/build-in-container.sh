@@ -9,7 +9,8 @@ cat >"$scriptf" <<EOF
 #!/bin/bash
 mkdir /src
 cp -af /age-plugin-tkey /src/
-git -C /src clone --depth=1 --branch=v0.0.1 https://github.com/tillitis/tkey-libs
+# TODO change to a tag > v0.0.1 when ready
+git -C /src clone --depth=1 --branch=main https://github.com/tillitis/tkey-libs
 # TODO change to main once merged
 git -C /src clone --depth=1 --branch=rework https://github.com/quite/tkey-device-x25519
 make -C /src/tkey-libs -j
