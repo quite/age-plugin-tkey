@@ -1,56 +1,77 @@
-package main
+package tkey
 
 import (
 	_ "embed"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
+	"golang.org/x/crypto/curve25519"
 )
 
-const verbose = false
+const (
+	ErrWrongDeviceApp = constError("wrong device app")
+)
 
-func getPubKey(userSecret [userSecretSize]byte, requireTouch bool) ([]byte, error) {
-	t := tkey{}
-	if err := t.connect(verbose); err != nil {
-		return nil, fmt.Errorf("connect failed: %w", err)
-	}
-	defer t.disconnect()
+const (
+	pluginDomain = "tillitis.se/tkey"
+	verbose      = false
+)
 
-	// TODO setting userSecret to fixed (non-random), it looks like the
-	// pubkey doesn't change depending on touchRequired when run on
-	// hw, but it does in qemu!?
-	pubBytes, err := t.x25519.GetPubKey(domain, userSecret, requireTouch)
-	if err != nil {
-		return nil, fmt.Errorf("GetPubKey failed: %w", err)
-	}
-
-	return pubBytes, nil
-}
-
-func computeShared(userSecret [userSecretSize]byte, requireTouch bool, theirPubKey [32]byte) ([]byte, error) {
-	t := tkey{}
-	if err := t.connect(verbose); err != nil {
-		return nil, fmt.Errorf("connect failed: %w", err)
-	}
-	defer t.disconnect()
-
-	shared, err := t.x25519.ComputeShared(domain, userSecret, requireTouch, theirPubKey)
-	if err != nil {
-		return nil, fmt.Errorf("ComputeShared failed: %w", err)
-	}
-
-	return shared, nil
-}
+var le = log.New(os.Stderr, "", 0)
 
 // nolint:typecheck // Avoid lint error when the embedding file is
 // missing. Makefile copies the device app binary here ./app.bin
 //
 //go:embed app.bin
-var appBinary []byte
+var AppBinary []byte
+
+func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {
+	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
+		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
+	}
+
+	t := tkey{}
+	if err := t.connect(verbose); err != nil {
+		return nil, fmt.Errorf("connect failed: %w", err)
+	}
+	defer t.disconnect()
+
+	pubKey, err := t.x25519.GetPubKey(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret),
+		requireTouch)
+	if err != nil {
+		return nil, fmt.Errorf("GetPubKey failed: %w", err)
+	}
+
+	return pubKey, nil
+}
+
+func DoECDH(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, error) {
+	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
+		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
+	}
+	if l := len(theirPubKey); l != curve25519.PointSize {
+		return nil, fmt.Errorf("theirPubKey is %d bytes, expected %d", l, curve25519.PointSize)
+	}
+
+	t := tkey{}
+	if err := t.connect(verbose); err != nil {
+		return nil, fmt.Errorf("connect failed: %w", err)
+	}
+	defer t.disconnect()
+
+	shared, err := t.x25519.DoECDH(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret),
+		requireTouch, [curve25519.PointSize]byte(theirPubKey))
+	if err != nil {
+		return nil, fmt.Errorf("DoECDH failed: %w", err)
+	}
+
+	return shared, nil
+}
 
 type tkey struct {
 	x25519 tkeyx25519.X25519
@@ -66,7 +87,7 @@ const (
 func (t *tkey) connect(verbose bool) error {
 	tkeyclient.SilenceLogging()
 
-	devPath := os.Getenv("TKEY_PORT")
+	devPath := os.Getenv("AGE_TKEY_PORT")
 	if devPath == "" {
 		var err error
 		devPath, err = tkeyclient.DetectSerialPort(verbose)
@@ -91,7 +112,7 @@ func (t *tkey) connect(verbose bool) error {
 		if verbose {
 			le.Printf("Device is in firmware mode. Loading app...\n")
 		}
-		if err := tk.LoadApp(appBinary, []byte{}); err != nil {
+		if err := tk.LoadApp(AppBinary, []byte{}); err != nil {
 			t.disconnect()
 			return fmt.Errorf("LoadApp failed: %w", err)
 		}
@@ -103,7 +124,7 @@ func (t *tkey) connect(verbose bool) error {
 				"Please unplug and plug it in again.\n")
 		}
 		t.disconnect()
-		return fmt.Errorf("Wrong app")
+		return ErrWrongDeviceApp
 	}
 
 	return nil
@@ -111,7 +132,7 @@ func (t *tkey) connect(verbose bool) error {
 
 func (t *tkey) disconnect() {
 	if err := t.x25519.Close(); err != nil {
-		le.Printf("%v\n", err)
+		le.Printf("%s\n", err)
 	}
 }
 
@@ -150,4 +171,10 @@ func isWantedApp(x25519 tkeyx25519.X25519) bool {
 	// not caring about nameVer.Version
 	return nameVer.Name0 == wantAppName0 &&
 		nameVer.Name1 == wantAppName1
+}
+
+type constError string
+
+func (err constError) Error() string {
+	return string(err)
 }

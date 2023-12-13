@@ -1,79 +1,73 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"crypto/ecdh"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"errors"
+	"crypto/sha512"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
-	"time"
 
-	"filippo.io/age"
-	"filippo.io/age/plugin"
-	"golang.org/x/crypto/blake2s"
-	"golang.org/x/crypto/chacha20poly1305"
-	"golang.org/x/crypto/curve25519"
-	"golang.org/x/crypto/hkdf"
-	"golang.org/x/term"
+	"github.com/quite/age-plugin-tkey/internal/tkey"
 )
 
 const (
-	pluginName   = "tkey"
-	pluginDomain = "tillitis.se/tkey"
-	domainSize   = 78
+	progName   = "age-plugin-tkey"
+	pluginName = "tkey"
 )
 
-var domain = func() [domainSize]byte {
-	var d [domainSize]byte
-	if len(d) > domainSize {
-		panic("built-in pluginDomain is too long")
-	}
-	copy(d[:], pluginDomain)
-	return d
-}()
+var version string
 
 // if AGEDEBUG=plugin then age sends plugin's stderr (and own debug)
 // to stderr
 var le = log.New(os.Stderr, "", 0)
 
 var (
-	generateFlag, requireTouchFlag bool
-	agePluginFlag, outputFlag      string
+	generateFlag, requireTouchFlag, versionFlag bool
+	agePluginFlag, outputFlag                   string
 )
 
 func main() {
+	if version == "" {
+		version = getBuildInfo()
+	}
+	deviceAppInfo := fmt.Sprintf("SHA-512 hash of the tkey-device-x25519 app binary that is loaded onto TKey:\n%0x\n", sha512.Sum512(tkey.AppBinary))
+
+	// TODO --uss ?
 	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
 	descGenerate := "Generate an identity backed by TKey"
-	descOutput := "Write output to file OUTPUT"
+	descOutput := "Output identity to file at PATH"
+	descTouch := "Make the identity require physical touch of TKey upon X25519 key exchange (use with --generate)"
+	descVersion := "Output version information and exit"
 	flag.BoolVar(&generateFlag, "generate", false, descGenerate)
 	flag.BoolVar(&generateFlag, "g", false, descGenerate)
 	flag.StringVar(&outputFlag, "output", "", descOutput)
 	flag.StringVar(&outputFlag, "o", "", descOutput)
-	flag.BoolVar(&requireTouchFlag, "touch", false, "Require physical touch of TKey upon use of identity")
+	flag.BoolVar(&requireTouchFlag, "touch", false, descTouch)
+	flag.BoolVar(&versionFlag, "version", false, descVersion)
 	flag.Usage = func() {
 		le.Printf(`Usage:
-  -g, --generate       Generate an identity backed by TKey
-  -o, --output PATH    Output identity to file at PATH
-  --touch              Make the identity require physical touch of TKey
-                       upon X25519 key exchange (use with --generate)
-`)
+  -g, --generate     %s
+  -o, --output PATH  %s
+  --touch            %s
+  --version          %s
+
+%s`, descGenerate, descOutput, wrap(descTouch, 80-21, 21), descVersion, deviceAppInfo)
 	}
 	flag.Parse()
+
+	if versionFlag {
+		fmt.Printf("%s %s\n\n%s", progName, version, deviceAppInfo)
+		os.Exit(0)
+	}
 
 	os.Exit(run())
 }
 
 func run() int {
 	if !generateFlag && (requireTouchFlag || outputFlag != "") {
-		le.Printf("-o or --touch can only be used together with -g\n")
+		le.Printf("-o and --touch can only be used together with -g\n")
 		flag.Usage()
 		return 2
 	}
@@ -83,8 +77,13 @@ func run() int {
 		return 0
 	}
 
-	switch {
-	case generateFlag:
+	if generateFlag && agePluginFlag != "" {
+		le.Printf("Cannot only use one of -g and --age-plugin\n")
+		flag.Usage()
+		return 2
+	}
+
+	if generateFlag {
 		out := os.Stdout
 		if outputFlag != "" {
 			f, err := os.OpenFile(outputFlag, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
@@ -102,259 +101,53 @@ func run() int {
 		if !generate(out, requireTouchFlag) {
 			return 1
 		}
+		return 0
+	}
 
-	case agePluginFlag != "":
-		switch agePluginFlag {
-		case "identity-v1":
-			err := runIdentity()
-			if err != nil {
-				le.Printf("runIdentity failed: %s\n", err)
-				return 1
-			}
-		default:
-			le.Printf("unknown state machine\n")
+	switch agePluginFlag {
+	case "identity-v1":
+		if err := runIdentity(); err != nil {
+			le.Printf("runIdentity failed: %s\n", err)
 			return 1
 		}
-
+	default:
+		le.Printf("%s: unknown state machine\n", agePluginFlag)
+		return 1
 	}
 
 	return 0
 }
 
-const (
-	identityDataSize = userSecretSize + 1 + pubHashPartSize
-	userSecretSize   = 16
-	pubHashPartSize  = 2
-)
-
-type identityData struct {
-	userSecret   [userSecretSize]byte
-	requireTouch bool
-	pubBytes     [32]byte
+func getBuildInfo() string {
+	version := "devel without BuildInfo"
+	if info, ok := debug.ReadBuildInfo(); ok {
+		sb := strings.Builder{}
+		sb.WriteString("devel")
+		for _, setting := range info.Settings {
+			if strings.HasPrefix(setting.Key, "vcs") {
+				sb.WriteString(fmt.Sprintf(" %s=%s", setting.Key, setting.Value))
+			}
+		}
+		version = sb.String()
+	}
+	return version
 }
 
-func generate(out *os.File, requireTouch bool) bool {
-	// Generate a privkey on the TKey and get hold of the pubkey
-
-	var userSecret [userSecretSize]byte
-	if _, err := rand.Read(userSecret[:]); err != nil {
-		le.Printf("rand.Read failed: %s\n", err)
-		return false
+func wrap(s string, cols int, indent int) string {
+	words := strings.Fields(strings.TrimSpace(s))
+	if len(words) == 0 {
+		return s
 	}
-
-	pubBytes, err := getPubKey(userSecret, requireTouch)
-	if err != nil {
-		le.Printf("%s\n", err)
-		return false
-	}
-
-	pub, err := ecdh.X25519().NewPublicKey(pubBytes)
-	if err != nil {
-		le.Printf("NewPublicKey failed: %s\n", err)
-		return false
-	}
-	recipient, err := plugin.EncodeX25519Recipient(pub)
-	if err != nil {
-		le.Printf("EncodeX25519Recipient failed: %s\n", err)
-		return false
-	}
-
-	// Now generate an identity using the non-fixed params including a
-	// short hash of the pubkey for later check.
-
-	// TODO maybe make our type to manage encode/decode
-	var data bytes.Buffer
-	data.Write(userSecret[:])
-	if requireTouch {
-		data.WriteByte(1)
-	} else {
-		data.WriteByte(0)
-	}
-	pubHash := blake2s.Sum256(pubBytes)
-	data.Write(pubHash[:pubHashPartSize])
-
-	if l := len(data.Bytes()); l != identityDataSize {
-		le.Printf("data is %d bytes, expected %d\n", l, identityDataSize)
-		return false
-	}
-
-	identity := plugin.EncodeIdentity(pluginName, data.Bytes())
-	if identity == "" {
-		le.Printf("EncodeIdentity returned empty string\n")
-		return false
-	}
-
-	if !term.IsTerminal(int(out.Fd())) {
-		le.Printf("recipient: %s\n", recipient)
-	}
-
-	fmt.Fprintf(out, "# created: %s\n", time.Now().Format(time.RFC3339))
-	fmt.Fprintf(out, "# recipient: %s\n", recipient)
-	fmt.Fprintf(out, "# touch required: %t\n", requireTouch)
-	fmt.Fprintf(out, "%s\n", identity)
-
-	return true
-}
-
-const (
-	x25519Label = "age-encryption.org/v1/X25519"
-	fileKeySize = 16
-)
-
-func runIdentity() error {
-	identities := []identityData{}
-
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		entry := scanner.Text()
-		if len(entry) == 0 {
+	out := words[0]
+	left := cols - len(out)
+	for _, w := range words[1:] {
+		if (1 + len(w)) > left {
+			out += "\n" + strings.Repeat(" ", indent) + w
+			left = cols - len(w)
 			continue
 		}
-
-		entry = strings.TrimPrefix(entry, "-> ")
-		cmd := strings.SplitN(entry, " ", 2)
-
-		switch cmd[0] {
-		case "add-identity":
-			name, data, err := plugin.ParseIdentity(cmd[1])
-			if err != nil {
-				le.Printf("identity skipped, ParseIdentity failed: %s\n", err)
-				continue
-			}
-			if name != pluginName {
-				le.Printf("identity skipped, unknown name\n")
-				continue
-			}
-			if len(data) != identityDataSize {
-				le.Printf("identity skipped, unexpected len\n")
-				continue
-			}
-
-			ourData := identityData{}
-			copy(ourData.userSecret[:], data[:userSecretSize])
-			ourData.requireTouch = false
-			if data[userSecretSize] == 1 {
-				ourData.requireTouch = true
-			}
-			pubHashPart := data[userSecretSize+1 : userSecretSize+1+pubHashPartSize]
-
-			pubBytes, err := getPubKey(ourData.userSecret, ourData.requireTouch)
-			if err != nil {
-				le.Printf("identity skipped, getPubKey failed: %s\n", err)
-				continue
-			}
-			copy(ourData.pubBytes[:], pubBytes)
-
-			// le.Printf("usersecret: %0x\n", ourData.userSecret)
-			// le.Printf("requiretouch: %t\n", ourData.requireTouch)
-			// le.Printf("pubbytes: %0x\n", ourData.pubBytes)
-
-			pubHashAgain := blake2s.Sum256(pubBytes)
-			if !bytes.Equal(pubHashPart, pubHashAgain[:pubHashPartSize]) {
-				le.Printf("identity skipped, hash mismatch\n")
-				continue
-			}
-
-			identities = append(identities, ourData)
-			// le.Printf("Added an identity\n")
-
-		case "recipient-stanza":
-			stanza := strings.Split(entry, " ")
-			if stanza[2] != "X25519" {
-				le.Printf("recipient-stanza skipped, unexpected type\n")
-				continue
-			}
-
-			pubKey, err := DecodeString(stanza[3])
-			if err != nil {
-				// TODO maybe this should error out
-				le.Printf("recipient-stanza skipped, DecodeString failed: %s\n", err)
-				continue
-			}
-			if l := len(pubKey); l != curve25519.PointSize {
-				// TODO maybe this should error out
-				le.Printf("got %d bytes, expected %d\n", l, curve25519.PointSize)
-				continue
-			}
-
-			var wrappedKeyStr string
-			for scanner.Scan() {
-				entry = scanner.Text()
-				wrappedKeyStr += entry
-				if len(entry) < 64 {
-					break
-				}
-			}
-			wrappedKey, err := DecodeString(wrappedKeyStr)
-			if err != nil {
-				return fmt.Errorf("DecodeString failed: %w", err)
-			}
-
-			if len(identities) == 0 {
-				le.Printf("No identities\n")
-				continue
-			}
-
-			// TODO handle multiple?
-			ourData := identities[0]
-
-			sharedSecret, err := computeShared(ourData.userSecret, ourData.requireTouch, [32]byte(pubKey))
-			if err != nil {
-				// TODO maybe this should error out
-				le.Printf("computeShared failed: %s", err)
-				continue
-			}
-
-			salt := make([]byte, 0, len(pubKey)+len(ourData.pubBytes))
-			salt = append(salt, pubKey...)
-			salt = append(salt, ourData.pubBytes[:]...)
-
-			h := hkdf.New(sha256.New, sharedSecret, salt, []byte(x25519Label))
-			wrappingKey := make([]byte, chacha20poly1305.KeySize)
-			if _, err = io.ReadFull(h, wrappingKey); err != nil {
-				return fmt.Errorf("ReadFull failed: %w", err)
-			}
-
-			fileKey, err := aeadDecrypt(wrappingKey, fileKeySize, wrappedKey)
-			if err == errIncorrectCiphertextSize {
-				return errors.New("invalid X25519 recipient block: incorrect file key size")
-			} else if err != nil {
-				return age.ErrIncorrectIdentity
-			}
-
-			fmt.Printf("-> file-key 0\n")
-			fmt.Printf("%s\n", EncodeToString(fileKey))
-
-		case "done":
-			fmt.Printf("-> done\n\n")
-		}
+		out += " " + w
+		left -= (1 + len(w))
 	}
-
-	return nil
-}
-
-var b64 = base64.RawStdEncoding.Strict()
-
-func DecodeString(s string) ([]byte, error) {
-	// CR and LF are ignored by DecodeString, but we don't want any malleability.
-	if strings.ContainsAny(s, "\n\r") {
-		return nil, errors.New(`unexpected newline character`)
-	}
-	return b64.DecodeString(s)
-}
-
-var EncodeToString = b64.EncodeToString
-
-var errIncorrectCiphertextSize = errors.New("encrypted value has unexpected length")
-
-func aeadDecrypt(key []byte, size int, ciphertext []byte) ([]byte, error) {
-	aead, err := chacha20poly1305.New(key)
-	if err != nil {
-		return nil, err
-	}
-	if len(ciphertext) != size+aead.Overhead() {
-		return nil, errIncorrectCiphertextSize
-	}
-	nonce := make([]byte, chacha20poly1305.NonceSize)
-	return aead.Open(nil, nonce, ciphertext, nil)
+	return out
 }
