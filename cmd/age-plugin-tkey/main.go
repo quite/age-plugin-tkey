@@ -24,8 +24,8 @@ var version string
 var le = log.New(os.Stderr, "", 0)
 
 var (
-	generateFlag, requireTouchFlag, versionFlag bool
-	agePluginFlag, outputFlag                   string
+	generateFlag, noTouchFlag, versionFlag bool
+	agePluginFlag, outputFlag              string
 )
 
 func main() {
@@ -38,22 +38,22 @@ func main() {
 	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
 	descGenerate := "Generate an identity backed by TKey"
 	descOutput := "Output identity to file at PATH"
-	descTouch := "Make the identity require physical touch of TKey upon X25519 key exchange (use with --generate)"
+	descNoTouch := "Make the identity NOT require physical touch of TKey upon X25519 key exchange (use with --generate)"
 	descVersion := "Output version information and exit"
 	flag.BoolVar(&generateFlag, "generate", false, descGenerate)
 	flag.BoolVar(&generateFlag, "g", false, descGenerate)
 	flag.StringVar(&outputFlag, "output", "", descOutput)
 	flag.StringVar(&outputFlag, "o", "", descOutput)
-	flag.BoolVar(&requireTouchFlag, "touch", false, descTouch)
+	flag.BoolVar(&noTouchFlag, "no-touch", false, descNoTouch)
 	flag.BoolVar(&versionFlag, "version", false, descVersion)
 	flag.Usage = func() {
 		le.Printf(`Usage:
   -g, --generate     %s
   -o, --output PATH  %s
-  --touch            %s
+  --no-touch         %s
   --version          %s
 
-%s`, descGenerate, descOutput, wrap(descTouch, 80-21, 21), descVersion, deviceAppInfo)
+%s`, descGenerate, descOutput, wrap(descNoTouch, 80-21, 21), descVersion, deviceAppInfo)
 	}
 	flag.Parse()
 
@@ -66,8 +66,8 @@ func main() {
 }
 
 func run() int {
-	if !generateFlag && (requireTouchFlag || outputFlag != "") {
-		le.Printf("-o and --touch can only be used together with -g\n")
+	if !generateFlag && (noTouchFlag || outputFlag != "") {
+		le.Printf("-o and --no-touch can only be used together with -g\n")
 		flag.Usage()
 		return 2
 	}
@@ -98,7 +98,7 @@ func run() int {
 			}()
 			out = f
 		}
-		if !generate(out, requireTouchFlag) {
+		if !generate(out, noTouchFlag) {
 			return 1
 		}
 		return 0

@@ -30,8 +30,9 @@ $ age -i my-keys --decrypt ./note-to-self
 remember to fix all bugs!
 ```
 
-To create an identity which requires a physical touch of TKey upon
-ECDH key exchange, add the flag `--touch` when generating.
+By default the generated identity will require physical touch of TKey
+when it does ECDH key exchange. Use the flag `--no-touch` to generate
+an identity that does not.
 
 After running the above, te file `my-keys` ends up containing a line
 beginning with `AGE-PLUGIN-TKEY-`. This holds the parameters used for
