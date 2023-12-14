@@ -13,15 +13,15 @@ install:
 
 .PHONY: copy-deviceapp
 copy-deviceapp:
-	cp -af ../tkey-device-x25519/x25519/app.bin internal/tkey/
+	cp -af ../tkey-device-x25519/x25519/app.bin internal/tkey/x25519.bin
 
 .PHONY: check-deviceapp-hash
 check-deviceapp-hash:
-	@(cd internal/tkey; echo "file:$$(pwd)/app.bin hash:$$(sha512sum app.bin | cut -c1-16)… expected:$$(cut -c1-16 <app.bin.sha512)…"; sha512sum -cw app.bin.sha512)
+	@(cd internal/tkey; echo "file:$$(pwd)/x25519.bin hash:$$(sha512sum x25519.bin | cut -c1-16)… expected:$$(cut -c1-16 <x25519.bin.sha512)…"; sha512sum -cw x25519.bin.sha512)
 
 .PHONY: clean
 clean:
-	rm -f age-plugin-tkey internal/tkey/app.bin
+	rm -f age-plugin-tkey internal/tkey/x25519.bin
 
 .PHONY: lint
 lint:

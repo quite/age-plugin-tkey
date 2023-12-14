@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	ErrWrongDevice = constError("wrong TKey or difference tkey-device-x25519 app")
+	ErrWrongDevice = constError("wrong TKey or different tkey-device-x25519 app")
 )
 
 const (

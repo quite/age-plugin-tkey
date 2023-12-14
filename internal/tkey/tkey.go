@@ -25,9 +25,9 @@ const (
 var le = log.New(os.Stderr, "", 0)
 
 // nolint:typecheck // Avoid lint error when the embedding file is
-// missing. Makefile copies the device app binary here ./app.bin
+// missing. Makefile copies the device app binary to here ./x25519.bin
 //
-//go:embed app.bin
+//go:embed x25519.bin
 var AppBinary []byte
 
 func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {

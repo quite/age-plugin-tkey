@@ -16,7 +16,7 @@ clang --version
 mkdir /src
 # Remove what we'll produce (if successful)
 rm -f /age-plugin-tkey/age-plugin-tkey
-rm -f /age-plugin-tkey/internal/app.bin
+rm -f /age-plugin-tkey/internal/x25519.bin
 
 cp -af /age-plugin-tkey /src/
 
@@ -31,7 +31,7 @@ make -C /src/age-plugin-tkey clean
 make -C /src/age-plugin-tkey -j age-plugin-tkey
 
 cp -af /src/age-plugin-tkey/age-plugin-tkey /age-plugin-tkey/age-plugin-tkey
-cp -af /src/tkey-device-x25519/x25519/app.bin /age-plugin-tkey/internal/tkey/app.bin
+cp -af /src/tkey-device-x25519/x25519/app.bin /age-plugin-tkey/internal/tkey/x25519.bin
 EOF
 
 chmod +x "$scriptf"
@@ -49,4 +49,4 @@ podman run --rm -i -t \
 
 rm -f "$scriptf"
 
-ls -l "$(realpath ./age-plugin-tkey)" "$(realpath ./internal/tkey/app.bin)"
+ls -l "$(realpath ./age-plugin-tkey)" "$(realpath ./internal/tkey/x25519.bin)"
