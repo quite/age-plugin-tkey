@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	filippo.io/age v1.1.2-0.20230920124100-101cc8676386
-	github.com/quite/tkeyx25519 v0.0.0-20231213224508-9ea7768b630e
+	github.com/quite/tkeyx25519 v0.0.1
 	github.com/tillitis/tkeyclient v0.0.8
 	golang.org/x/crypto v0.16.0
 	golang.org/x/term v0.15.0

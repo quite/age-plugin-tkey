@@ -5,8 +5,8 @@ github.com/creack/goselect v0.1.2 h1:2DNy14+JPjRBgPzAd1thbQp4BSIihxcBf0IXhQXDRa0
 github.com/creack/goselect v0.1.2/go.mod h1:a/NhLweNvqIYMuxcMOuWY516Cimucms3DglDzQP3hKY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
-github.com/quite/tkeyx25519 v0.0.0-20231213224508-9ea7768b630e h1:YWQ9wrTPmik9Y4dOX8mTDeANchqxZkqXfk/0YdUTvRI=
-github.com/quite/tkeyx25519 v0.0.0-20231213224508-9ea7768b630e/go.mod h1:dNIA8JvczoWZSSP/DbZGnW9dPKEa4ohYwkdUw3vRDTs=
+github.com/quite/tkeyx25519 v0.0.1 h1:06Bggr+E8WJM9Vr3KsvlWGMuHDn7TlGg7QEMYuP5/KA=
+github.com/quite/tkeyx25519 v0.0.1/go.mod h1:dNIA8JvczoWZSSP/DbZGnW9dPKEa4ohYwkdUw3vRDTs=
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/tillitis/tkeyclient v0.0.8 h1:ZECNCkHmcxx5BlEdyhjMPeBX4/ZiuEov+nOAiMB3cOQ=
 github.com/tillitis/tkeyclient v0.0.8/go.mod h1:NPZaaOyroiprK4qNSADHY2pc7TAYDoZ3JKRIFhUMvHE=
