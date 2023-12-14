@@ -49,13 +49,17 @@ QEMU's char-device before. Before running `age`, do something like
 
 ## Building
 
-First of all the device app must cloned and built in a sibling
-directory. This can be done by running `git -C .. clone
-https://github.com/quite/tkey-device-x25519` and follow the
-instructions in the README.md over there. Then just run `make` back in
-this repository.
+For reproducibility the X25519 device app is typically built in a
+container, thus locking down the toolchain. Because if one single bit
+changes in the app.bin that will run on the TKey (for example due to a
+newer clang/llvm), then the identity (private/public key) of it will
+change.
 
-For reproducability and maintaining a stable device app hash and thus
-also a stable identity, we typically build in a container image. There
-is some stuff in [contrib/](contrib/) for doing that using podman, you
-can try `make` there.
+You can use [build-in-container.sh](build-in-container.sh) to build
+both the device app and age-plugin-tkey using our own container image
+(see [Containerfile](Containerfile)). This uses `podman` to run
+container (packages: `podman rootlesskit slirp4netns`).
+
+The `x25519/app.bin.sha512` contains the expected hash of the device
+app binary when built using our container image which currently has
+clang 17.

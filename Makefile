@@ -27,3 +27,13 @@ clean:
 lint:
 	make -C gotools golangci-lint
 	./gotools/golangci-lint run
+
+
+.PHONY: build-in-container
+build-in-container:
+	podman image exists tkey-apps-builder || make build-image
+	./build-in-container.sh tkey-apps-builder
+.PHONY: build-image
+build-image:
+	#--pull=always --no-cache
+	podman build -t localhost/tkey-apps-builder -f Containerfile
