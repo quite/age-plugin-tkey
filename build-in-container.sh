@@ -11,7 +11,6 @@ set -eu
 
 # remove what we'll produce (if successful)
 rm -f /hostrepo/age-plugin-tkey
-rm -f /hostrepo/internal/x25519.bin
 
 mkdir /src
 cp -af /hostrepo /src/age-plugin-tkey
@@ -20,7 +19,7 @@ cd /src/age-plugin-tkey
 ./build.sh
 
 cp -afv age-plugin-tkey /hostrepo/age-plugin-tkey
-cp -afv ./internal/tkey/x25519.bin /hostrepo/internal/tkey/x25519.bin
+cp -afv ./internal/tkey/x25519-v*.bin /hostrepo/internal/tkey/
 EOF
 
 chmod +x "$scriptf"

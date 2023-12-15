@@ -1,12 +1,16 @@
 package tkey
 
 import (
+	"bytes"
+	"crypto/sha512"
 	_ "embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/quite/tkeyx25519"
 	"github.com/tillitis/tkeyclient"
@@ -17,18 +21,43 @@ const (
 	ErrWrongDeviceApp = constError("wrong device app")
 )
 
+var (
+	AppHash string
+	AppFile = "unknown"
+)
+
 const (
 	pluginDomain = "tillitis.se/tkey"
 	verbose      = false
 )
 
-var le = log.New(os.Stderr, "", 0)
+var (
+	le = log.New(os.Stderr, "", 0)
+	//go:embed x25519-v0.0.1.bin
+	appBin []byte
+	//go:embed x25519-hashes.sha512
+	hashes []byte
+)
 
-// nolint:typecheck // Avoid lint error when the embedding file is
-// missing. Makefile copies the device app binary to here ./x25519.bin
-//
-//go:embed x25519.bin
-var AppBinary []byte
+func init() {
+	ah := sha512.Sum512(appBin)
+	AppHash = hex.EncodeToString(ah[:])
+	lines := strings.Split(string(hashes), "\n")
+	for _, l := range lines {
+		ss := strings.Split(l, " ")
+		if len(ss) != 3 {
+			continue
+		}
+		h, err := hex.DecodeString(ss[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		if bytes.Equal(h, ah[:]) {
+			AppFile = ss[2]
+			return
+		}
+	}
+}
 
 func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {
 	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
@@ -112,7 +141,7 @@ func (t *tkey) connect(verbose bool) error {
 		if verbose {
 			le.Printf("Device is in firmware mode. Loading app...\n")
 		}
-		if err := tk.LoadApp(AppBinary, []byte{}); err != nil {
+		if err := tk.LoadApp(appBin, []byte{}); err != nil {
 			t.disconnect()
 			return fmt.Errorf("LoadApp failed: %w", err)
 		}

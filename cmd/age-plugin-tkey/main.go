@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha512"
 	"flag"
 	"fmt"
 	"log"
@@ -32,7 +31,6 @@ func main() {
 	if version == "" {
 		version = getBuildInfo()
 	}
-	deviceAppInfo := fmt.Sprintf("SHA-512 hash of the tkey-device-x25519 app binary that is loaded onto TKey:\n%0x\n", sha512.Sum512(tkey.AppBinary))
 
 	// TODO --uss ?
 	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
@@ -52,13 +50,17 @@ func main() {
   -o, --output PATH  %s
   --no-touch         %s
   --version          %s
-
-%s`, descGenerate, descOutput, wrap(descNoTouch, 80-21, 21), descVersion, deviceAppInfo)
+`, descGenerate, descOutput, wrap(descNoTouch, 80-21, 21), descVersion)
 	}
 	flag.Parse()
 
 	if versionFlag {
-		fmt.Printf("%s %s\n\n%s", progName, version, deviceAppInfo)
+		fmt.Printf(`%s %s
+
+Embedded tkey-device-x25519 app binary:
+filename: %s
+sha512sum: %s
+`, progName, version, tkey.AppFile, tkey.AppHash)
 		os.Exit(0)
 	}
 

@@ -3,31 +3,31 @@ set -eu
 
 clang --version
 
-LIBS="v0.0.2"
-# TODO change once tagged
-X25519="main"
+TAGLIBS="v0.0.2"
+TAGX25519="v0.0.1"
 
-LIBSD=../tkey-libs
-X25519D=../tkey-device-x25519
+DIRLIBS=../tkey-libs
+DIRX25519=../tkey-device-x25519
 
-if [[ ! -e $LIBSD ]]; then
-  git clone --branch=$LIBS https://github.com/tillitis/tkey-libs $LIBSD
+if [[ ! -e $DIRLIBS ]]; then
+  git clone --branch=$TAGLIBS https://github.com/tillitis/tkey-libs $DIRLIBS
 else
-  printf "NOTE: building with existing %s, possibly not a clean clone!\n" $LIBSD
+  printf "NOTE: building with existing %s, possibly not a clean clone!\n" $DIRLIBS
 fi
-(cd $LIBSD; pwd; git describe --dirty --long --always)
-make -C $LIBSD -j
+make -C $DIRLIBS -j
 
-if [[ ! -e $X25519D ]]; then
-  git clone --branch=$X25519 --depth=1 https://github.com/quite/tkey-device-x25519 $X25519D
+if [[ ! -e $DIRX25519 ]]; then
+  git clone --branch=$TAGX25519 --depth=1 https://github.com/quite/tkey-device-x25519 $DIRX25519
 else
-  printf "NOTE: building with existing %s, possibly not a clean clone!\n" $X25519D
+  printf "NOTE: building with existing %s, possibly not a clean clone!\n" $DIRX25519
 fi
-(cd $X25519D; pwd; git describe --dirty --long --always)
 # skipping the hash check
-make -C $X25519D -j x25519/app.bin
+make -C $DIRX25519 -j x25519/app.bin
 
 make clean
 
-cp -afv $X25519D/x25519/app.bin ./internal/tkey/x25519.bin
+printf "DEPENDENCY: %-22s %-7s git-describe: %s\n" $DIRLIBS $TAGLIBS "$(git -C $DIRLIBS describe --dirty --long --always)"
+printf "DEPENDENCY: %-22s %-7s git-describe: %s\n" $DIRX25519 $TAGX25519 "$(git -C $DIRX25519 describe --dirty --long --always)"
+
+cp -afv $DIRX25519/x25519/app.bin ./internal/tkey/x25519-$TAGX25519.bin
 make -j

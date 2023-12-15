@@ -1,6 +1,6 @@
 
 .PHONY: age-plugin-tkey
-age-plugin-tkey: copy-deviceapp check-deviceapp-hash
+age-plugin-tkey: check-deviceapp-hashes
 	go build ./cmd/age-plugin-tkey
 
 # TODO: probably something like this for release builds of tagged version:
@@ -11,17 +11,13 @@ age-plugin-tkey: copy-deviceapp check-deviceapp-hash
 install:
 	cp -af age-plugin-tkey /usr/local/bin/
 
-.PHONY: copy-deviceapp
-copy-deviceapp:
-	cp -af ../tkey-device-x25519/x25519/app.bin internal/tkey/x25519.bin
-
-.PHONY: check-deviceapp-hash
-check-deviceapp-hash:
-	@(cd internal/tkey; echo "file:$$(pwd)/x25519.bin hash:$$(sha512sum x25519.bin | cut -c1-16)… expected:$$(cut -c1-16 <x25519.bin.sha512)…"; sha512sum -cw x25519.bin.sha512)
+.PHONY: check-deviceapp-hashes
+check-deviceapp-hashes:
+	(cd internal/tkey && sha512sum -c -w --ignore-missing x25519-hashes.sha512)
 
 .PHONY: clean
 clean:
-	rm -f age-plugin-tkey internal/tkey/x25519.bin
+	rm -f age-plugin-tkey
 
 .PHONY: lint
 lint:
