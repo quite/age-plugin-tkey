@@ -16,7 +16,7 @@ const (
 	pluginName = "tkey"
 )
 
-var version string
+var version = "0.0.1"
 
 // if AGEDEBUG=plugin then age sends plugin's stderr (and own debug)
 // to stderr
