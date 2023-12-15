@@ -10,13 +10,16 @@ communicating with this device app.
 
 Note that this should still be considered is work in progress (WIP).
 In particular, there is a possibility that we could need to make
-changes to tkey-device-x25519 for some reason. Changes to the source
-code would change the binary, which would cause the identity of a TKey
-that runs it to be different. This would mean that the secret key no
-longer is the same, and that data encrypted for an identity based on
-the previous secret would be impossible to decrypt. It could be
-possible to work around this by first decrypting using an older
-version, and then encrypting again using a later.
+changes to tkey-device-x25519 for some particular reason. That said, I
+think current design and its implementation may be sound.
+
+Changes to the source code of tkey-device-x25519 would change the
+binary, which would cause the identity of a TKey that runs it to be
+different. This would mean that the secret key no longer is the same,
+and that data encrypted for an identity based on the previous secret
+would be impossible to decrypt. It could be possible to work around
+this by first decrypting using an older version, and then encrypting
+again using a later.
 
 ## Installing
 
