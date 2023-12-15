@@ -44,8 +44,8 @@ https://dev.tillitis.se/intro/#measured-boot--secrets
 
 To run the plugin towards an emulated TKey in QEMU, instead of real
 hardware, you can set the environment variable `AGE_TKEY_PORT` to
-QEMU's char-device before. Before running `age`, do something like
-`export AGE_TKEY_PORT=/dev/pts/22`.
+QEMU's char-device (shown when QEMU starts up). Before running `age`,
+do something like `export AGE_TKEY_PORT=/dev/pts/22`.
 
 ## Building
 
