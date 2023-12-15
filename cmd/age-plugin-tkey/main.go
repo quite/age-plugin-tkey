@@ -98,7 +98,7 @@ func run() int {
 			}()
 			out = f
 		}
-		if !generate(out, noTouchFlag) {
+		if !generate(out, noTouchFlag == false) {
 			return 1
 		}
 		return 0
