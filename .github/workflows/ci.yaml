@@ -1,0 +1,34 @@
+
+name: ci
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'ci'
+  pull_request: {}
+  # allow manual runs:
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/quite/tkey-apps-builder:1
+      # https://github.com/actions/runner/issues/2033#issuecomment-1598547465
+      options: --user 1001
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          #fetch-depth: 0
+          persist-credentials: false
+
+      - name: build
+        run: ./build.sh
+
+      - name: make lint
+        run: make lint
+
+      # - name: check for SPDX tags
+      #   run: ./tools/spdx-ensure
