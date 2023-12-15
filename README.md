@@ -20,7 +20,9 @@ data encrypted for the previous key pair will be impossible.
 
 In the following we create a new keypair/identity and learn about the
 public key/recipient that is us. Then we encrypt a note to ourselves,
-and proceed to decrypt it.
+and proceed to decrypt it. The LED on the TKey will shine yellow when
+the X25519 app has been loaded (and will flash in the same colour when
+it needs to be touched).
 
 ```
 $ age-plugin-tkey --generate >my-keys
