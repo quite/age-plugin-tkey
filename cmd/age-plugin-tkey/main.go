@@ -38,7 +38,7 @@ func main() {
 	flag.StringVar(&agePluginFlag, "age-plugin", "", "For choosing state machine")
 	descGenerate := "Generate an identity backed by TKey"
 	descOutput := "Output identity to file at PATH"
-	descNoTouch := "Make the identity NOT require physical touch of TKey upon X25519 key exchange (use with --generate)"
+	descNoTouch := "Generate an identity for which the TKey will NOT require physical touch before computing a shared key (X25519 ECDH)"
 	descVersion := "Output version information and exit"
 	flag.BoolVar(&generateFlag, "generate", false, descGenerate)
 	flag.BoolVar(&generateFlag, "g", false, descGenerate)
