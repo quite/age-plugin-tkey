@@ -79,7 +79,7 @@ do something like `export AGE_TKEY_PORT=/dev/pts/22`.
 
 ## Building
 
-For ease of installing and building the age-plugin-tkey Go program, we
+For ease of installing and building the `age-plugin-tkey` Go program, we
 keep the device app binary committed to the repository. So if you
 don't want or need to rebuild or work on the device app, you can just
 build with:
@@ -99,12 +99,14 @@ both the device app and age-plugin-tkey using our own container image
 (see [Containerfile](Containerfile)). The clone of this repo that
 you're sitting in will be mounted into the container and built, but
 dependencies will be freshly cloned as they don't exist inside (it
-runs `build.sh` there). `podman` is used for running the container
-(packages: `podman rootlesskit slirp4netns`).
+runs [build.sh](build.sh) there). `podman` is used for running the
+container (packages: `podman rootlesskit slirp4netns`).
 
-The file `internal/tkey/x25519-hashes.sha512` contains hashes of known
-versions of the device app binary, as built using our container image
-(which currently has clang 17). We keep the device app binaries
-committed to the repository. A tagged version of age-plugin-tkey
-currently uses one specific version of that binary, which is embedded
-during build, see [internal/tkey/tkey.go](internal/tkey/tkey.go).
+The file
+[internal/tkey/x25519-hashes.sha512](internal/tkey/x25519-hashes.sha512)
+contains hashes of known versions of the device app binary, as built
+using our container image (which currently has clang 17). We keep the
+device app binaries committed to the repository. A tagged version of
+age-plugin-tkey currently uses one specific version of that binary,
+which is embedded during build, see
+[internal/tkey/tkey.go](internal/tkey/tkey.go).
