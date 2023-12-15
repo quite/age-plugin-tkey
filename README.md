@@ -50,15 +50,18 @@ QEMU's char-device before. Before running `age`, do something like
 ## Building
 
 For reproducibility the X25519 device app is typically built in a
-container, thus locking down the toolchain. Because if one single bit
-changes in the app.bin that will run on the TKey (for example due to a
-newer clang/llvm), then the identity (private/public key) of it will
-change.
+container, thus locking down the toolchain, and using specific
+versions of dependencies. Because if one single bit changes in the
+app.bin that will run on the TKey (for example due to a newer
+clang/llvm), then the identity (private/public key) of it will change.
 
 You can use [build-in-container.sh](build-in-container.sh) to build
 both the device app and age-plugin-tkey using our own container image
-(see [Containerfile](Containerfile)). This uses `podman` to run
-container (packages: `podman rootlesskit slirp4netns`).
+(see [Containerfile](Containerfile)). The clone of this repo that
+you're sitting in will be mounted into the container and built, but
+dependencies will be freshly cloned as they don't exist inside (it
+runs `build.sh` there). `podman` is used for running the container
+(packages: `podman rootlesskit slirp4netns`).
 
 The `x25519/app.bin.sha512` contains the expected hash of the device
 app binary when built using our container image which currently has
