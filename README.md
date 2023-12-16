@@ -8,10 +8,10 @@ the TKey. The Go package
 [tkeyx25519](https://github.com/quite/tkeyx25519) is used for
 communicating with this device app.
 
-Note that this should still be considered is work in progress (WIP).
-In particular, there is a possibility that we could need to make
-changes to tkey-device-x25519 for some particular reason. That said, I
-think current design and its implementation may be sound.
+Note that this should still be considered work in progress (WIP). In
+particular, there is a possibility that we could need to make changes
+to tkey-device-x25519 for some reason. That said, I think current
+design and its implementation may be sound.
 
 Changes to the source code of tkey-device-x25519 would change the
 binary, which would cause the identity of a TKey that runs it to be
@@ -23,14 +23,16 @@ again using a later.
 
 ## Installing
 
-The easiest way to install is to run:
+The easiest way is to run the following, which installs the
+`age-plugin-tkey` binary in `$GOPATH/bin` (or `$HOME/go/bin` if GOPATH
+is not set).
 
 ```
 go install github.com/quite/age-plugin-tkey/cmd/age-plugin-tkey@latest
 ```
 
- `age-plugin-tkey` needs to be installed in a directory listed in
- `PATH`, so that `age` can find it.
+`age-plugin-tkey` needs to be installed in a directory listed in
+`PATH`, so that `age` can find it.
 
 See below for information about building yourself.
 
@@ -67,7 +69,7 @@ The generated identity will by default cause TKey to require physical
 touch before computing a shared key (doing ECDH). You can pass the
 flag `--no-touch` to generate an identity that does not.
 
-After running the above, te file `my-keys` ends up containing a line
+After running the above, the file `my-keys` ends up containing a line
 beginning with `AGE-PLUGIN-TKEY-`. This holds the parameters used for
 deriving the secret key on the TKey (which must be the exact same
 physical device as used for generation). The secret key itself never
