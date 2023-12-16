@@ -29,7 +29,10 @@ The easiest way to install is to run:
 go install github.com/quite/age-plugin-tkey/cmd/age-plugin-tkey@latest
 ```
 
-Se below for information about building yourself.
+ `age-plugin-tkey` needs to be installed in a directory listed in
+ `PATH`, so that `age` can find it.
+
+See below for information about building yourself.
 
 If you have not installed and used any other software for the TKey
 before, you might not be able to access the serial port of the TKey.
