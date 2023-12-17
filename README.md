@@ -1,12 +1,11 @@
-
-Plugin for [age](https://github.com/FiloSottile/age) to use a Tillitis
+[age](https://github.com/FiloSottile/age) plugin for using a Tillitis
 [TKey](https://github.com/tillitis/tillitis-key1) USB security key.
 
-For doing X25519 ECDH it embeds and runs the device app
-[tkey-device-x25519](https://github.com/quite/tkey-device-x25519) on
-the TKey. The Go package
-[tkeyx25519](https://github.com/quite/tkeyx25519) is used for
-communicating with this device app.
+For X25519 ECDH key agreement it embeds and runs the
+[tkey-device-x25519](https://github.com/quite/tkey-device-x25519) app
+on the TKey. The Go package
+[tkeyx25519](https://github.com/quite/tkeyx25519)is used for
+communicating with the device app.
 
 Note that this should still be considered work in progress (WIP). In
 particular, there is a possibility that we could need to make changes
@@ -72,7 +71,8 @@ when generating the identity, and will be used again to recreate it
 before computing a shared key (to be used for decryption of the
 message). The file `my-identity` file should be treated as a secret,
 even though the full identity is a combination of data in this file
-and key material on the TKey which never leaves the same.
+and key material on the TKey -- which is unique to each TKey, and
+never leaves the same.
 
 The file also has some comment lines beginning with `#` with more
 information about the identity. Especially useful is the `recipient`,
@@ -80,16 +80,12 @@ which is used to encrypt data which then can be decrypted this precise
 identity.
 
 You can generate as many identities as you want, each will be bound to
-the TKey used when generating them, and have their own corresponding
+the unique TKey it was generated with, and have its own corresponding
 recipient. The *recipient* is not a secret, on the contrary it is what
-you give to your friend so they can encrypt their message for you. But
-you need the corresponding identity line in order to decrypt it. The
-`age` option `-i/--identity` takes a file, which actually can contain
-multiple identity lines.
-
-The generated identity will by default cause TKey to require physical
-touch before computing a shared key (doing ECDH). You can pass the
-flag `--no-touch` to generate an identity that does not.
+you give to your friend so they can encrypt their message for you. The
+corresponding identity is needed in order to decrypt it. The `age`
+option `-i/--identity` takes a file, which can contain one or more
+identity lines.
 
 After running the above, the file `my-keys` ends up containing a line
 beginning with `AGE-PLUGIN-TKEY-`. This holds the parameters used for
@@ -99,7 +95,11 @@ leaves the TKey hardware, which actually has no storage. You can learn
 more about this here:
 https://dev.tillitis.se/intro/#measured-boot--secrets
 
-To run the plugin towards an emulated TKey in QEMU, instead of real
+The generated identity will by default cause TKey to require physical
+touch before computing a shared key (doing ECDH). You can pass the
+flag `--no-touch` to generate an identity that does not.
+
+To run the plugin towards an emulated TKey in QEMU instead of real
 hardware, you can set the environment variable `AGE_TKEY_PORT` to
 QEMU's char-device (shown when QEMU starts up). Before running `age`,
 do something like `export AGE_TKEY_PORT=/dev/pts/22`.
