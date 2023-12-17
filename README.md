@@ -51,19 +51,39 @@ your system.
 
 ## Using
 
-In the following we create a new keypair/identity and learn about the
-public key/recipient that is us. Then we encrypt a note to ourselves,
-and proceed to decrypt it. The LED on the TKey will shine yellow when
-the X25519 app has been loaded (and will flash in the same colour when
-it needs to be touched).
+In the following we create a new random *identity* (private key) for
+ourselves and learn about the corresponding *recipient* (public key).
+Then we encrypt a message to ourselves using that recipient, and
+proceed to decrypt it using our identity. The LED on the TKey will
+shine yellow when the X25519 app has been loaded, and will flash in
+the same colour when it needs to be touched (upon decryption).
 
 ```
-$ age-plugin-tkey --generate >my-keys
+$ age-plugin-tkey --generate --output my-identity
 # recipient: age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377
 $ echo "remember to fix all bugs!" | age --encrypt -a -r age1xuqv8tq5ttkgwe3quys0dfwxv6zzqpemvckjeutudtjjhfac2f9q6lc377 >note-to-self
-$ age -i my-keys --decrypt ./note-to-self
+$ age -i my-identity --decrypt ./note-to-self
 remember to fix all bugs!
 ```
+
+The file `my-identity` contains a line beginning with
+`AGE-PLUGIN-TKEY-`, which holds parameters that were used when
+generating the identity, and are used to recreate the full
+identity/private key on the TKey. This file should be treated as a
+secret.
+
+The file also has some comment lines beginning with `#` with more
+information about the identity. Especially useful is the `recipient`,
+which is used to encrypt data which then can be decrypted this precise
+identity.
+
+You can generate as many identities as you want, each will be bound to
+the TKey used when generating them, and have their own corresponding
+recipient. The *recipient* is not a secret, on the contrary it is what
+you give to your friend so they can encrypt their message for you. But
+you need the corresponding identity line in order to decrypt it. The
+`age` option `-i/--identity` takes a file, which actually can contain
+multiple identity lines.
 
 The generated identity will by default cause TKey to require physical
 touch before computing a shared key (doing ECDH). You can pass the
