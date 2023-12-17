@@ -4,7 +4,7 @@
 For X25519 ECDH key agreement it embeds and runs the
 [tkey-device-x25519](https://github.com/quite/tkey-device-x25519) app
 on the TKey. The Go package
-[tkeyx25519](https://github.com/quite/tkeyx25519)is used for
+[tkeyx25519](https://github.com/quite/tkeyx25519) is used for
 communicating with the device app.
 
 Note that this should still be considered work in progress (WIP). In
@@ -65,14 +65,16 @@ $ age -i my-identity --decrypt ./note-to-self
 remember to fix all bugs!
 ```
 
-The file `my-identity` contains a line beginning with
-`AGE-PLUGIN-TKEY-`, which holds parameters that were used on the TKey
-when generating the identity, and will be used again to recreate it
-before computing a shared key (to be used for decryption of the
-message). The file `my-identity` file should be treated as a secret,
-even though the full identity is a combination of data in this file
-and key material on the TKey -- which is unique to each TKey, and
-never leaves the same.
+After running this, the file `my-identity` will contain a line
+beginning with `AGE-PLUGIN-TKEY-` which holds parameters that were
+used on the TKey when generating the identity, and will be used again
+to recreate it before computing a shared key (to be used for
+decryption of the message). The file `my-identity` file should be
+treated as a secret, even though the full identity is a combination of
+data in this file and key material on the TKey -- which is unique to
+each TKey, and never leaves the hardware. There is actually no storage
+on the TKey, you can learn more about how it derives secret keys here:
+https://dev.tillitis.se/intro/#measured-boot--secrets
 
 The file also has some comment lines beginning with `#` with more
 information about the identity. Especially useful is the `recipient`,
@@ -83,17 +85,9 @@ You can generate as many identities as you want, each will be bound to
 the unique TKey it was generated with, and have its own corresponding
 recipient. The *recipient* is not a secret, on the contrary it is what
 you give to your friend so they can encrypt their message for you. The
-corresponding identity is needed in order to decrypt it. The `age`
-option `-i/--identity` takes a file, which can contain one or more
-identity lines.
-
-After running the above, the file `my-keys` ends up containing a line
-beginning with `AGE-PLUGIN-TKEY-`. This holds the parameters used for
-deriving the secret key on the TKey (which must be the exact same
-physical device as used for generation). The secret key itself never
-leaves the TKey hardware, which actually has no storage. You can learn
-more about this here:
-https://dev.tillitis.se/intro/#measured-boot--secrets
+corresponding identity and the same physical TKey device are both
+needed in order to decrypt it. The `age` option `-i/--identity` takes
+a file, which can contain one or more identity lines.
 
 The generated identity will by default cause TKey to require physical
 touch before computing a shared key (doing ECDH). You can pass the
