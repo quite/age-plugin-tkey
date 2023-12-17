@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"filippo.io/age"
@@ -18,7 +19,7 @@ import (
 )
 
 type recipient struct {
-	fileIndex      string
+	fileIndex      int
 	pubKey         []byte
 	wrappedFileKey []byte
 }
@@ -67,7 +68,11 @@ func runIdentity() error {
 				return fmt.Errorf("malformed recipient-stanza: %q", s)
 			}
 
-			fileIndex, recipientType, recipientPubKeyStr := s.args[0], s.args[1], s.args[2]
+			fileIndex, err := strconv.Atoi(s.args[0])
+			if err != nil {
+				return fmt.Errorf("bad recipient-stanza file_index: %w", err)
+			}
+			recipientType, recipientPubKeyStr := s.args[1], s.args[2]
 			if recipientType != "X25519" {
 				le.Printf("recipient skipped: type is %s, expected X25519\n", recipientType)
 				continue
@@ -107,7 +112,11 @@ func runIdentity() error {
 		return err
 	}
 
+	unwrapped := make(map[int]struct{})
 	for _, rcpt := range recipients {
+		if _, ok := unwrapped[rcpt.fileIndex]; ok {
+			continue
+		}
 		for _, id := range identities {
 
 			if id.RequireTouch() {
@@ -138,7 +147,7 @@ func runIdentity() error {
 				return err
 			}
 
-			writeStanza("file-key", []string{rcpt.fileIndex}, fileKey)
+			writeStanza("file-key", []string{strconv.Itoa(rcpt.fileIndex)}, fileKey)
 
 			s, err := readStanza(r)
 			if err != nil {
@@ -148,6 +157,7 @@ func runIdentity() error {
 				return fmt.Errorf("malformed file-key response stanza: %q", s)
 			}
 
+			unwrapped[rcpt.fileIndex] = struct{}{}
 			// we successfully unwrapped using this id, so stop
 			break
 		}
