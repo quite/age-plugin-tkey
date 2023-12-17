@@ -32,7 +32,11 @@ printf "%s" "$plaintext" | age -e -r "$r_age" -r "$r_tkey" -o out/test2-cipherte
 cat <<EOF
 
 # Now we have a ciphertext encrypted to BOTH an age identity on disk,
-# and to identity on TKey. Try these:
+# and to identity on TKey. Here follows some test you can try.
+
+# First you may set PATH to newly built age-plugin-tkey enable debug.
+export PATH=$(git rev-parse --show-toplevel):\$PATH
+export AGEDEBUG=plugin
 
 # Should decrypt, both with and without TKey plugged in.
 age -d -i out/test2-id-tkey-and-age <out/test2-ciphertext-both
