@@ -20,7 +20,7 @@ func generate(out *os.File, requireTouch bool) bool {
 		return false
 	}
 
-	id, err := identity.NewIdentity(userSecret[:], requireTouch)
+	udi, id, err := identity.NewIdentity(userSecret[:], requireTouch)
 	if err != nil {
 		le.Printf("NewIdentity failed: %s\n", err)
 		return false
@@ -28,7 +28,7 @@ func generate(out *os.File, requireTouch bool) bool {
 
 	idStr, err := id.EncodeIdentity(pluginName)
 	if err != nil {
-		le.Printf("%s", err)
+		le.Printf("%s\n", err)
 		return false
 	}
 
@@ -38,11 +38,17 @@ func generate(out *os.File, requireTouch bool) bool {
 		return false
 	}
 
+	if udi == nil {
+		le.Printf("Could not get TKey serial number (UDI) because device app was already loaded. Re-plug TKey and generate again if you need it.\n")
+	}
 	if !term.IsTerminal(int(out.Fd())) {
 		le.Printf("recipient: %s\n", recipient)
 	}
 
 	fmt.Fprintf(out, "# created: %s\n", time.Now().UTC().Format(time.RFC3339))
+	if udi != nil {
+		fmt.Fprintf(out, "# TKey serial number (UDI): %s\n", udi.String())
+	}
 	fmt.Fprintf(out, "# recipient: %s\n", recipient)
 	fmt.Fprintf(out, "# touch required: %t\n", requireTouch)
 	fmt.Fprintf(out, "%s\n", idStr)

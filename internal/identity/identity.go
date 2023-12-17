@@ -12,6 +12,7 @@ import (
 	"filippo.io/age/plugin"
 	"github.com/quite/age-plugin-tkey/internal/tkey"
 	"github.com/quite/tkeyx25519"
+	"github.com/tillitis/tkeyclient"
 	"golang.org/x/crypto/blake2s"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/curve25519"
@@ -36,16 +37,15 @@ type Identity struct {
 	pubKey       []byte
 }
 
-func NewIdentity(userSecret []byte, requireTouch bool) (*Identity, error) {
-	pubKey, err := tkey.GetPubKey(userSecret, requireTouch)
+func NewIdentity(userSecret []byte, requireTouch bool) (*tkeyclient.UDI, *Identity, error) {
+	udi, pubKey, err := tkey.GetPubKey(userSecret, requireTouch)
 	if err != nil {
-		return nil, fmt.Errorf("GetPubKey failed: %w", err)
+		return nil, nil, fmt.Errorf("GetPubKey failed: %w", err)
 	}
 	if l := len(pubKey); l != curve25519.PointSize {
-		return nil, fmt.Errorf("pubKey is %d bytes, expected %d", l, curve25519.PointSize)
+		return nil, nil, fmt.Errorf("pubKey is %d bytes, expected %d", l, curve25519.PointSize)
 	}
-
-	return &Identity{
+	return udi, &Identity{
 		userSecret:   userSecret,
 		requireTouch: requireTouch,
 		pubKey:       pubKey,
@@ -58,7 +58,7 @@ func NewIdentityFromRawID(rawID []byte) (*Identity, error) {
 		return nil, fmt.Errorf("parseBytes failed: %w", err)
 	}
 
-	pubKey, err := tkey.GetPubKey(userSecret, requireTouch)
+	_, pubKey, err := tkey.GetPubKey(userSecret, requireTouch)
 	if err != nil {
 		return nil, fmt.Errorf("GetPubKey failed: %w", err)
 	}

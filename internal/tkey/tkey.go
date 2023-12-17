@@ -59,24 +59,25 @@ func init() {
 	}
 }
 
-func GetPubKey(userSecret []byte, requireTouch bool) ([]byte, error) {
+func GetPubKey(userSecret []byte, requireTouch bool) (*tkeyclient.UDI, []byte, error) {
 	if l := len(userSecret); l != tkeyx25519.UserSecretSize {
-		return nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
+		return nil, nil, fmt.Errorf("userSecret is %d bytes, expected %d", l, tkeyx25519.UserSecretSize)
 	}
 
 	t := tkey{}
-	if err := t.connect(verbose); err != nil {
-		return nil, fmt.Errorf("connect failed: %w", err)
+	udi, err := t.connect(verbose)
+	if err != nil {
+		return nil, nil, fmt.Errorf("connect failed: %w", err)
 	}
 	defer t.disconnect()
 
 	pubKey, err := t.x25519.GetPubKey(pluginDomain, [tkeyx25519.UserSecretSize]byte(userSecret),
 		requireTouch)
 	if err != nil {
-		return nil, fmt.Errorf("GetPubKey failed: %w", err)
+		return nil, nil, fmt.Errorf("GetPubKey failed: %w", err)
 	}
 
-	return pubKey, nil
+	return udi, pubKey, nil
 }
 
 func DoECDH(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, error) {
@@ -88,7 +89,7 @@ func DoECDH(userSecret []byte, requireTouch bool, theirPubKey []byte) ([]byte, e
 	}
 
 	t := tkey{}
-	if err := t.connect(verbose); err != nil {
+	if _, err := t.connect(verbose); err != nil {
 		return nil, fmt.Errorf("connect failed: %w", err)
 	}
 	defer t.disconnect()
@@ -113,7 +114,7 @@ const (
 	wantAppName1 = "19  "
 )
 
-func (t *tkey) connect(verbose bool) error {
+func (t *tkey) connect(verbose bool) (*tkeyclient.UDI, error) {
 	tkeyclient.SilenceLogging()
 
 	devPath := os.Getenv("AGE_TKEY_PORT")
@@ -121,7 +122,7 @@ func (t *tkey) connect(verbose bool) error {
 		var err error
 		devPath, err = tkeyclient.DetectSerialPort(verbose)
 		if err != nil {
-			return fmt.Errorf("DetectSerialPort failed: %w", err)
+			return nil, fmt.Errorf("DetectSerialPort failed: %w", err)
 		}
 	}
 
@@ -130,20 +131,26 @@ func (t *tkey) connect(verbose bool) error {
 		le.Printf("Connecting to device on serial port %s...\n", devPath)
 	}
 	if err := tk.Connect(devPath); err != nil {
-		return fmt.Errorf("Connect %s failed: %w", devPath, err)
+		return nil, fmt.Errorf("Connect %s failed: %w", devPath, err)
 	}
 
 	t.x25519 = tkeyx25519.New(tk)
 
 	// TODO handleSignals(func() { exit(1) }, os.Interrupt, syscall.SIGTERM)
 
+	var udi *tkeyclient.UDI
 	if isFirmwareMode(tk) {
 		if verbose {
 			le.Printf("Device is in firmware mode. Loading app...\n")
 		}
+		var err error
+		udi, err = tk.GetUDI()
+		if err != nil {
+			return nil, fmt.Errorf("GetUDI failed: %w", err)
+		}
 		if err := tk.LoadApp(appBin, []byte{}); err != nil {
 			t.disconnect()
-			return fmt.Errorf("LoadApp failed: %w", err)
+			return nil, fmt.Errorf("LoadApp failed: %w", err)
 		}
 	}
 
@@ -153,10 +160,10 @@ func (t *tkey) connect(verbose bool) error {
 				"Please unplug and plug it in again.\n")
 		}
 		t.disconnect()
-		return ErrWrongDeviceApp
+		return nil, ErrWrongDeviceApp
 	}
 
-	return nil
+	return udi, nil
 }
 
 func (t *tkey) disconnect() {
