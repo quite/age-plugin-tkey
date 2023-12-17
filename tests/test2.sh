@@ -36,19 +36,21 @@ cat <<EOF
 
 # Should decrypt, both with and without TKey plugged in.
 age -d -i out/test2-id-tkey-and-age <out/test2-ciphertext-both
-# Regarding the above test, if you ran test2.sh --touch and TKey is
-# plugged in, you had to touch it 2 times. Could this be because
-# recipients for age-plugin-tkey identities look just like the age
-# native recipients? Because it has an ed25519 pubkey. So both have to
-# be tried by the plugin? While age-plugin-yubikey does not? Hm, but
-# adding a 3rd (age native) identity does not result in the need for
-# touch 3 times... (TODO).
 
 # Should decrypt only with TKey plugged in
 age -d -i out/test2-id-tkey-only <out/test2-ciphertext-both
 
 # Should decrypt, no matter any TKey
 age -d -i out/test2-id-age-only <out/test2-ciphertext-both
+
+# If you ran test2.sh --touch and try to decrypt with the TKey
+# identity, then you have to touch the TKey 2 times. Could this be
+# because recipients for age-plugin-tkey identities look just like the
+# age native recipients? Because it has an ed25519 pubkey. So both
+# have to be tried by the plugin? Hm, but adding a 3rd (age native)
+# identity to encrypt for does not result in the need for touch 3
+# times... (TODO).
+
 EOF
 
 exit 0
