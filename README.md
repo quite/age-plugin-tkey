@@ -67,10 +67,12 @@ remember to fix all bugs!
 ```
 
 The file `my-identity` contains a line beginning with
-`AGE-PLUGIN-TKEY-`, which holds parameters that were used when
-generating the identity, and are used to recreate the full
-identity/private key on the TKey when computing a shared key (to be
-used for decryption). This file should be treated as a secret.
+`AGE-PLUGIN-TKEY-`, which holds parameters that were used on the TKey
+when generating the identity, and will be used again to recreate it
+before computing a shared key (to be used for decryption of the
+message). The file `my-identity` file should be treated as a secret,
+even though the full identity is a combination of data in this file
+and key material on the TKey which never leaves the same.
 
 The file also has some comment lines beginning with `#` with more
 information about the identity. Especially useful is the `recipient`,
