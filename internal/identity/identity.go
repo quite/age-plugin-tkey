@@ -97,14 +97,14 @@ func (id *Identity) EncodeRecipient() (string, error) {
 	return recipientStr, nil
 }
 
-func (id *Identity) Unwrap(recipientPubKey []byte, wrappedFileKey []byte) ([]byte, error) {
-	sharedSecret, err := tkey.DoECDH(id.userSecret, id.requireTouch, recipientPubKey)
+func (id *Identity) Unwrap(pubKey []byte, wrappedFileKey []byte) ([]byte, error) {
+	sharedSecret, err := tkey.DoECDH(id.userSecret, id.requireTouch, pubKey)
 	if err != nil {
 		return nil, err
 	}
 
-	salt := make([]byte, 0, len(recipientPubKey)+len(id.pubKey))
-	salt = append(salt, recipientPubKey...)
+	salt := make([]byte, 0, len(pubKey)+len(id.pubKey))
+	salt = append(salt, pubKey...)
 	salt = append(salt, id.pubKey...)
 
 	h := hkdf.New(sha256.New, sharedSecret, salt, []byte(x25519Label))

@@ -72,25 +72,25 @@ func runIdentity() error {
 			if err != nil {
 				return fmt.Errorf("bad recipient-stanza file_index: %w", err)
 			}
-			recipientType, recipientPubKeyStr := s.args[1], s.args[2]
-			if recipientType != "X25519" {
-				le.Printf("recipient skipped: type is %s, expected X25519\n", recipientType)
+			typ, pubKeyStr := s.args[1], s.args[2]
+			if typ != "X25519" {
+				le.Printf("recipient skipped: type is %s, expected X25519\n", typ)
 				continue
 			}
 
 			// gentle reminder: this pubkey is the ephemeral session
-			// key, not sender's identity
-			recipientPubKey, err := DecodeString(recipientPubKeyStr)
+			// key, not recipient pubkey for sender's identity
+			pubKey, err := DecodeString(pubKeyStr)
 			if err != nil {
-				return fmt.Errorf("decode recipientPubKey failed: %w", err)
+				return fmt.Errorf("decode pubkey failed: %w", err)
 			}
-			if len(recipientPubKey) != curve25519.PointSize {
-				return fmt.Errorf("recipientPubKey has wrong length")
+			if len(pubKey) != curve25519.PointSize {
+				return fmt.Errorf("pubkey has wrong length")
 			}
 
 			recipients = append(recipients, &recipient{
 				fileIndex:      fileIndex,
-				pubKey:         recipientPubKey,
+				pubKey:         pubKey,
 				wrappedFileKey: s.data,
 			})
 		}
