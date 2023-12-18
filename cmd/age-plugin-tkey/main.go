@@ -91,17 +91,8 @@ func run() int {
 		return 0
 	}
 
-	passed := 0
-	if generateFlag {
-		passed++
-	}
-	if convertFlag {
-		passed++
-	}
-	if agePluginFlag != "" {
-		passed++
-	}
-	if passed > 1 {
+	var boolInt = map[bool]int{false: 0, true: 1}
+	if (boolInt[generateFlag] + boolInt[convertFlag] + boolInt[agePluginFlag != ""]) > 1 {
 		le.Printf("Only one of -g, -y, and --age-plugin can be used\n")
 		flag.Usage()
 		return 2
