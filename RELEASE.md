@@ -1,3 +1,7 @@
+# v0.0.3
+
+- Add -y flag to convert TKey identities to recipients.
+
 # v0.0.2
 
 - Add TKey serial number (UDI) as a comment in the output. Only
