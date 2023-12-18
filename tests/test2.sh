@@ -27,7 +27,8 @@ if [[ -z "$r_tkey" ]] || [[ -z "$r_age" ]]; then
 fi
 
 plaintext="too many secrets"
-printf "%s" "$plaintext" | age -e -r "$r_age" -r "$r_tkey" -o out/test2-ciphertext-both
+# encrypting with the tkey-recipient first, avoiding having to touch 2 times
+printf "%s" "$plaintext" | age -e -r "$r_tkey" -r "$r_age" -o out/test2-ciphertext-both
 
 cat <<EOF
 
@@ -46,15 +47,6 @@ age -d -i out/test2-id-tkey-only <out/test2-ciphertext-both
 
 # Should decrypt, no matter any TKey
 age -d -i out/test2-id-age-only <out/test2-ciphertext-both
-
-# If you ran test2.sh --touch and try to decrypt with the TKey
-# identity, then you have to touch the TKey 2 times. Could this be
-# because recipients for age-plugin-tkey identities look just like the
-# age native recipients? Because it has an ed25519 pubkey. So both
-# have to be tried by the plugin? Hm, but adding a 3rd (age native)
-# identity to encrypt for does not result in the need for touch 3
-# times... (TODO).
-
 EOF
 
 exit 0
