@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# investigate https://github.com/str4d/rage/issues/414
+
 mkdir -p out
 rm -f out/test2-*
 
@@ -33,19 +35,20 @@ printf "%s" "$plaintext" | age -e -r "$r_tkey" -r "$r_age" -o out/test2-cipherte
 cat <<EOF
 
 # Now we have a ciphertext encrypted to BOTH an age identity on disk,
-# and to identity on TKey. Here follows some test you can try.
+# and to identity on TKey. Here follows some tests you can try.
 
-# First you may set PATH to newly built age-plugin-tkey enable debug.
+# First you may set PATH to newly built age-plugin-tkey
 export PATH=$(git rev-parse --show-toplevel):\$PATH
+# Maybe enable debug
 export AGEDEBUG=plugin
 
-# Should decrypt, both with and without TKey plugged in.
+# The following should decrypt, both with and without TKey plugged in.
 age -d -i out/test2-id-tkey-and-age <out/test2-ciphertext-both
 
-# Should decrypt only with TKey plugged in
+# The following should only decrypt with TKey plugged in
 age -d -i out/test2-id-tkey-only <out/test2-ciphertext-both
 
-# Should decrypt, no matter any TKey
+# The following should decrypt, no matter any TKey
 age -d -i out/test2-id-age-only <out/test2-ciphertext-both
 EOF
 
