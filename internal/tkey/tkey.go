@@ -54,7 +54,6 @@ func init() {
 		}
 		if bytes.Equal(h, ah[:]) {
 			AppFile = ss[2]
-			return
 		}
 	}
 }
