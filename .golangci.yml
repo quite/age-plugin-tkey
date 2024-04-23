@@ -15,6 +15,7 @@ linters:
     - test
     - unused
   disable:
+    - perfsprint  # for perf, skip for now
     - cyclop
     - gocyclo
     - funlen
