@@ -28,7 +28,12 @@ jobs:
         run: ./build.sh
 
       - name: make lint
-        run: make lint
+        run: |
+          go install golang.org/dl/go1.22.2@latest
+          $(go env GOPATH)/bin/go1.22.2 download
+          ln -s $(go env GOPATH)/bin/go1.22.2 $(go env GOPATH)/bin/go
+          PATH=$(go env GOPATH)/bin:$PATH
+          make lint
 
       # - name: check for SPDX tags
       #   run: ./tools/spdx-ensure
