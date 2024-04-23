@@ -33,7 +33,7 @@ const (
 
 var (
 	le = log.New(os.Stderr, "", 0)
-	//go:embed x25519-v0.0.1.bin
+	//go:embed x25519-v0.0.2.bin
 	appBin []byte
 	//go:embed x25519-hashes.sha512
 	hashes []byte
