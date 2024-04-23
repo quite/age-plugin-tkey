@@ -1,3 +1,9 @@
+# v0.0.4
+
+- Bump go deps
+
+tkey-device-x25519: v0.0.2 -- identity not changed
+
 # v0.0.3
 
 - Add -y flag to convert TKey identities to recipients.
