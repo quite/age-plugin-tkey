@@ -11,31 +11,27 @@ import (
 	"golang.org/x/term"
 )
 
-func generate(out *os.File, requireTouch bool) bool {
+func generate(out *os.File, requireTouch bool) error {
 	// Generate a privkey on the TKey and get hold of the pubkey
 
 	var userSecret [tkeyx25519.UserSecretSize]byte
 	if _, err := rand.Read(userSecret[:]); err != nil {
-		le.Printf("rand.Read failed: %s\n", err)
-		return false
+		return fmt.Errorf("rand.Read failed: %w", err)
 	}
 
 	udi, id, err := identity.NewIdentity(userSecret[:], requireTouch)
 	if err != nil {
-		le.Printf("NewIdentity failed: %s\n", err)
-		return false
+		return fmt.Errorf("NewIdentity failed: %w", err)
 	}
 
 	idStr, err := id.EncodeIdentity(pluginName)
 	if err != nil {
-		le.Printf("%s\n", err)
-		return false
+		return fmt.Errorf("EncodeIdentity failed: %w", err)
 	}
 
 	recipient, err := id.EncodeRecipient()
 	if err != nil {
-		le.Printf("encodeRecipient failed: %s\n", err)
-		return false
+		return fmt.Errorf("EncodeRecipient failed: %w", err)
 	}
 
 	if udi == nil {
@@ -53,5 +49,5 @@ func generate(out *os.File, requireTouch bool) bool {
 	fmt.Fprintf(out, "# touch required: %t\n", requireTouch)
 	fmt.Fprintf(out, "%s\n", idStr)
 
-	return true
+	return nil
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/quite/age-plugin-tkey/internal/identity"
 )
 
-func convert(in io.Reader, out io.Writer) bool {
+func convert(in io.Reader, out io.Writer) error {
 	pluginPrefix := fmt.Sprintf("AGE-PLUGIN-%s-", strings.ToUpper(pluginName))
 
 	scanner := bufio.NewScanner(in)
@@ -28,8 +28,7 @@ func convert(in io.Reader, out io.Writer) bool {
 
 		name, rawID, err := plugin.ParseIdentity(line)
 		if err != nil {
-			le.Printf("ParseIdentity failed on line %d: %s\n", n, err)
-			return false
+			return fmt.Errorf("ParseIdentity failed on line %d: %w", n, err)
 		}
 		if name != pluginName {
 			continue
@@ -37,22 +36,19 @@ func convert(in io.Reader, out io.Writer) bool {
 
 		id, err := identity.NewIdentityFromRawID(rawID)
 		if err != nil {
-			le.Printf("NewIdentityFromRawID failed: %s\n", err)
-			return false
+			return fmt.Errorf("NewIdentityFromRawID failed: %w", err)
 		}
 
 		recipient, err := id.EncodeRecipient()
 		if err != nil {
-			le.Printf("EncodeRecipient failed: %s\n", err)
-			return false
+			return fmt.Errorf("EncodeRecipient failed: %w", err)
 		}
 		fmt.Fprintf(out, "%s\n", recipient)
 	}
 
 	if err := scanner.Err(); err != nil {
-		le.Printf("Scan failed: %s\n", err)
-		return false
+		return fmt.Errorf("Scan failed: %w", err)
 	}
 
-	return true
+	return nil
 }

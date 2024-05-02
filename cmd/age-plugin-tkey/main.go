@@ -1,13 +1,16 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/quite/age-plugin-tkey/internal/identity"
 	"github.com/quite/age-plugin-tkey/internal/tkey"
+	"github.com/tillitis/tkeyclient"
 )
 
 const (
@@ -103,30 +106,32 @@ func run() int {
 		if outputFlag != "" {
 			f, err := os.OpenFile(outputFlag, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 			if err != nil {
-				le.Printf("OpenFile failed: %s\n", err)
+				le.Printf("%s\n", err)
 				return 1
 			}
 			out = f
 		}
-		success := generate(out, noTouchFlag == false)
-		if outputFlag != "" {
-			if err := out.Close(); err != nil {
-				le.Printf("Close failed: %s\n", err)
-			}
-		}
-		if !success {
+		if err := generate(out, noTouchFlag == false); err != nil {
+			err = baseErr(err)
+			le.Printf("generate failed: %s\n", err)
 			if outputFlag != "" {
 				if err := os.Remove(outputFlag); err != nil {
 					le.Printf("Remove failed: %s\n", err)
 				}
 			}
 			return 1
+		} else if outputFlag != "" {
+			if err := out.Close(); err != nil {
+				le.Printf("Close failed: %s\n", err)
+			}
 		}
 		return 0
 	}
 
 	if convertFlag {
-		if !convert(os.Stdin, os.Stdout) {
+		if err := convert(os.Stdin, os.Stdout); err != nil {
+			err = baseErr(err)
+			le.Printf("convert failed: %s\n", err)
 			return 1
 		}
 		return 0
@@ -163,4 +168,19 @@ func wrap(s string, cols int, indent int) string {
 		left -= (1 + len(w))
 	}
 	return out
+}
+
+func baseErr(err error) error {
+	candidates := []error{
+		tkeyclient.ErrNoDevice,
+		tkeyclient.ErrManyDevices,
+		tkey.ErrWrongDeviceApp,
+		identity.ErrWrongDevice,
+	}
+	for _, baseErr := range candidates {
+		if errors.Is(err, baseErr) {
+			return baseErr
+		}
+	}
+	return err
 }
