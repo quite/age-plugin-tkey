@@ -106,14 +106,20 @@ func run() int {
 				le.Printf("OpenFile failed: %s\n", err)
 				return 1
 			}
-			defer func() {
-				if err := f.Close(); err != nil {
-					le.Printf("Close failed: %s\n", err)
-				}
-			}()
 			out = f
 		}
-		if !generate(out, noTouchFlag == false) {
+		success := generate(out, noTouchFlag == false)
+		if outputFlag != "" {
+			if err := out.Close(); err != nil {
+				le.Printf("Close failed: %s\n", err)
+			}
+		}
+		if !success {
+			if outputFlag != "" {
+				if err := os.Remove(outputFlag); err != nil {
+					le.Printf("Remove failed: %s\n", err)
+				}
+			}
 			return 1
 		}
 		return 0
