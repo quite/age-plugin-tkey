@@ -1,3 +1,9 @@
+# v0.0.5
+
+- Bump go dependencies only (in particular filippo.io/age v1.2.0)
+
+tkey-device-x25519: v0.0.2 -- identity not changed
+
 # v0.0.4
 
 - Bump go deps
