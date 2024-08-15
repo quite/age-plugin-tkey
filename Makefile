@@ -19,11 +19,6 @@ check-deviceapp-hashes:
 clean:
 	rm -f age-plugin-tkey
 
-.PHONY: lint
-lint:
-	make -C gotools golangci-lint
-	./gotools/golangci-lint run
-
 
 .PHONY: build-in-container
 build-in-container:
@@ -33,3 +28,15 @@ build-in-container:
 build-image:
 	#--pull=always --no-cache
 	podman build -t localhost/tkey-apps-builder -f Containerfile
+
+
+golangci_version=$(shell grep -A2 "uses: golangci" .github/workflows/ci.yaml | grep -o -m1 "v[0-9]\+\.[.0-9]\+")
+golangci_cachedir=$(HOME)/.cache/golangci-lint/$(golangci_version)
+.PHONY: lint
+lint:
+	mkdir -p $(golangci_cachedir)
+	podman run --rm -it \
+		-v $$(pwd):/src -w /src \
+		-v $(golangci_cachedir):/root/.cache \
+		docker.io/golangci/golangci-lint:$(golangci_version)-alpine \
+		golangci-lint run

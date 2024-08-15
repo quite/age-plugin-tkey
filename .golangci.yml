@@ -22,7 +22,7 @@ linters:
     - gocognit
     - nestif
     - exhaustruct  # TODO? annoying for now
-    - goerr113  # TODO enable later
+    - err113  # TODO enable later
     - godot
     - godox
     - depguard
