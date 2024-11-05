@@ -123,28 +123,49 @@ why we only needed to implement Unwrap of a "file key", not Wrap).
 The consequence is that when you are decrypting using a TKey identity
 (`-i`) and the data is encrypted for multiple recipients, then an
 attempt to use the TKey (for ECDH) will be made for each native X25519
-recipient, in the order they were passed with `-r` -- but I guess
-implementations could vary. Imagine some data encrypted and then
-decrypted like this:
+recipient, in the order they were passed with `-r` (but I guess the
+order could vary depending the implementation). Consider the following
+procedure of encrypting and then decrypting a message, some data:
 
 ```
 age-keygen -o some-agekeygen-id
-# Note the RECIPIENT (public key) for this some-agekeygen-id
+# Make a note of the RECIPIENT (public key) for this some-agekeygen-id
 
 age-plugin-tkey --generate -o my-tkey-id
-# Note the RECIPIENT (public key) for this my-tkey-id
+# Make a note of the RECIPIENT (public key) for this my-tkey-id
 
 printf "some data\n" | age -r SOME-AGEKEYGEN-RECIPIENT -r MY-TKEY-RECIPIENT --encrypt -o ./ciphertext
 
 age -i my-tkey-id --decrypt ./ciphertext
 ```
 
-When decrypting, two recipients are found to be native X25519, so both
-will have to be tried using the TKey identity (`-i`). The first
+When decrypting, two recipients are found to be native X25519, and
+both have to be tried using the passed TKey identity (`-i`). The first
 recipient (non-TKey) passed using `-r` will be tried first. You will
 have to touch your TKey, but decryption will fail silently. Then the
 second recipient (TKey) will be tried. You will have to touch TKey
 again, but this time decryption will succeed.
+
+The reason for why decryption have to be attempted is because the
+[https://github.com/C2SP/C2SP/blob/main/age.md#x25519-recipient-stanza](recipient-stanza)
+does not simply contain the public key recipient corresponding to an
+identity, so no simple check can be made. The recipient-stanza
+contains an ephemeral share and a file-key which is wrapped using a
+key derived from that. To unwrap the file-key, the shared secret must
+first be computed using ECDH. Only if this secret is correct can the
+key derived from it successfully unwrap the file-key, which can then
+decrypt the message. So if a message is encrypted for multiple native
+X25519 recipients, then for each one of them ECDH has to be run on the
+TKey -- which then has to be touched -- until the file-key can be
+unwrapped (if at all possible).
+
+One can imagine another implementation where the TKey device app does
+not only do X25519 ECDH, but instead more of the age cryptography is
+run on it. The device app running on the TKey could then receive the
+wrapped file-key along with all the recipients, and would try them one
+by one until it successfully unwraps the file-key (or fails to). It
+would execute multiple ECDH, but could be made to require touching
+only once for this whole operation.
 
 ## Building
 
