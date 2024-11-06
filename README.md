@@ -147,7 +147,7 @@ second recipient (TKey) will be tried. You will have to touch TKey
 again, but this time decryption will succeed.
 
 The reason for why decryption have to be attempted is because the
-[https://github.com/C2SP/C2SP/blob/main/age.md#x25519-recipient-stanza](recipient-stanza)
+[recipient-stanza](https://github.com/C2SP/C2SP/blob/main/age.md#x25519-recipient-stanza)
 does not simply contain the public key recipient corresponding to an
 identity, so no simple check can be made. The recipient-stanza
 contains an ephemeral share and a file-key which is wrapped using a
