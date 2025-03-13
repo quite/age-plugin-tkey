@@ -64,6 +64,12 @@ func runIdentity() error {
 			rawIdentities = append(rawIdentities, rawID)
 
 		case "recipient-stanza":
+			// First nicely skip types we don't handle, no error
+			if len(s.args) > 0 && s.args[1] != "X25519" {
+				le.Printf("recipient skipped: type is %s, expected X25519\n", s.args[1])
+				continue
+			}
+
 			if len(s.args) != 3 || len(s.data) == 0 {
 				return fmt.Errorf("malformed recipient-stanza: %q", s)
 			}
@@ -72,11 +78,7 @@ func runIdentity() error {
 			if err != nil {
 				return fmt.Errorf("bad recipient-stanza file_index: %w", err)
 			}
-			typ, pubKeyStr := s.args[1], s.args[2]
-			if typ != "X25519" {
-				le.Printf("recipient skipped: type is %s, expected X25519\n", typ)
-				continue
-			}
+			pubKeyStr := s.args[2]
 
 			// gentle reminder: this pubkey is the ephemeral session
 			// key, not recipient pubkey for sender's identity
