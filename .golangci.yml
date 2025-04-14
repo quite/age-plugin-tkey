@@ -1,42 +1,93 @@
+version: "2"
 linters:
-  presets:
-    # found in: golangci-lint help linters
-    - bugs
-    - comment
-    - complexity
-    - error
-    - format
-    - import
-    - metalinter
-    - module
-    - performance
-    - sql
-    # - style  # turned off, can be too much
-    - test
-    - unused
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - dupword
+    - durationcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocritic
+    - gomoddirectives
+    - gomodguard
+    - gosec
+    - gosmopolitan
+    - loggercheck
+    - maintidx
+    - makezero
+    - misspell
+    - musttag
+    - nilerr
+    - nilnesserr
+    - noctx
+    - paralleltest
+    - prealloc
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - spancheck
+    - sqlclosecheck
+    - testableexamples
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unparam
+    - usetesting
+    - zerologlint
   disable:
-    - perfsprint  # for perf, skip for now
     - cyclop
-    - gocyclo
+    - depguard
+    - err113
+    - exhaustruct
     - funlen
     - gocognit
-    - nestif
-    - exhaustruct  # TODO? annoying for now
-    - err113  # TODO enable later
+    - gocyclo
     - godot
     - godox
-    - depguard
-    - wrapcheck # TODO enable?
-
+    - nestif
+    - perfsprint
+    - wrapcheck
+  settings:
+    govet:
+      enable:
+        - shadow
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - revive
+        text: increment-decrement
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - linters:
-        - revive
-      text: increment-decrement
-
-linters-settings:
-  govet:
-    enable:
-      - shadow
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -111,7 +111,7 @@ func run() int {
 			}
 			out = f
 		}
-		if err := generate(out, noTouchFlag == false); err != nil {
+		if err := generate(out, !noTouchFlag); err != nil {
 			err = baseErr(err)
 			le.Printf("generate failed: %s\n", err)
 			if outputFlag != "" {

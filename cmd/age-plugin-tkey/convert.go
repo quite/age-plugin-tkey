@@ -47,6 +47,7 @@ func convert(in io.Reader, out io.Writer) error {
 	}
 
 	if err := scanner.Err(); err != nil {
+		// nolint:staticcheck // ignoring ST1005, to capitalize func name
 		return fmt.Errorf("Scan failed: %w", err)
 	}
 

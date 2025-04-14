@@ -130,6 +130,7 @@ func (t *tkey) connect(verbose bool) (*tkeyclient.UDI, error) {
 		le.Printf("Connecting to device on serial port %s...\n", devPath)
 	}
 	if err := tk.Connect(devPath); err != nil {
+		// nolint:staticcheck // ignoring ST1005, to capitalize func name
 		return nil, fmt.Errorf("Connect %s failed: %w", devPath, err)
 	}
 
