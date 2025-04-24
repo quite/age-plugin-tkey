@@ -3,7 +3,7 @@ module github.com/quite/age-plugin-tkey
 go 1.20
 
 require (
-	filippo.io/age v1.2.0
+	filippo.io/age v1.2.1
 	github.com/quite/tkeyx25519 v0.0.3
 	github.com/tillitis/tkeyclient v1.0.0
 	golang.org/x/crypto v0.26.0
