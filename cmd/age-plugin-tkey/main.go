@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	version    = "0.0.4"
+	version    = "0.0.6"
 	pluginName = "tkey"
 )
 

@@ -1,3 +1,10 @@
+# v0.0.6
+
+- Solve issue with non-X25519 stanzas https://github.com/quite/age-plugin-tkey/issues/5
+- Bump go dependency filippo.io/age
+
+tkey-device-x25519: v0.0.2 -- identity not changed
+
 # v0.0.5
 
 - Bump go dependencies only (in particular filippo.io/age v1.2.0)
